@@ -275,6 +275,11 @@ int main()
 
 
     float lastTime = glfwGetTime(); // para o delta time visto em aula
+    float car_velocity = 0.0f;
+    const float max_velocity = 5.0f;
+    const float acceleration = 4.0f;
+    const float deceleration = 3.0f;
+
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -287,27 +292,44 @@ int main()
         lastTime = currentTime;
 
 
-        float speed = 2.0f;      // unidades por segundo
-        float rotationSpeed = 2.5f; // rad/s
+        float rotation_speed = 2.5f; // rad/s
 
         if (g_Input.W)
         {
-            g_TorsoPositionX += sin(g_CarAngleY) * speed * deltaTime;
-            g_TorsoPositionZ += cos(g_CarAngleY) * speed * deltaTime;
+            car_velocity += acceleration * deltaTime;
         }
-        if (g_Input.S)
+        else if (g_Input.S)
         {
-            g_TorsoPositionX -= sin(g_CarAngleY) * speed * deltaTime;
-            g_TorsoPositionZ -= cos(g_CarAngleY) * speed * deltaTime;
+            car_velocity -= acceleration * deltaTime;
         }
+        else
+        {
+            // Desaceleração natural
+            if (car_velocity > 0.0f)
+            {
+                car_velocity -= deceleration * deltaTime;
+                if (car_velocity < 0.0f) car_velocity = 0.0f;
+            }
+            else if (car_velocity < 0.0f)
+            {
+                car_velocity += deceleration * deltaTime;
+                if (car_velocity > 0.0f) car_velocity = 0.0f;
+            }
+        }
+
+        // Limita a velocidade máxima
+        if (car_velocity > max_velocity) car_velocity = max_velocity;
+        if (car_velocity < -max_velocity) car_velocity = -max_velocity;
+
+        // Aplica translação com base na direção atual do carro
+        g_TorsoPositionX += sin(g_CarAngleY) * car_velocity * deltaTime;
+        g_TorsoPositionZ += cos(g_CarAngleY) * car_velocity * deltaTime;
+
+        // Rotação com A e D
         if (g_Input.A)
-        {
-            g_CarAngleY += rotationSpeed * deltaTime;
-        }
+            g_CarAngleY += rotation_speed * deltaTime;
         if (g_Input.D)
-        {
-            g_CarAngleY -= rotationSpeed * deltaTime;
-}
+            g_CarAngleY -= rotation_speed * deltaTime;
 
 
 
