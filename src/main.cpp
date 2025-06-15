@@ -129,6 +129,8 @@ float g_AngleX = 0.0f;
 float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
+float g_CarAngleY = 0.0f; // Var para o angulo da direção do carro
+
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
 bool g_LeftMouseButtonPressed = false;
@@ -357,6 +359,7 @@ int main()
 
         // Translação inicial do torso
         model = model * Matrix_Translate(g_TorsoPositionX - 1.0f, g_TorsoPositionY + 1.0f, g_TorsoPositionZ + 0.0f);
+        model = model * Matrix_Rotate_Y(g_CarAngleY);
         // Guardamos matriz model atual na pilha
         PushMatrix(model);
             // Atualizamos a matriz model (multiplicação à direita) para fazer um escalamento do torso
@@ -1300,13 +1303,19 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     float delta = 3.141592 / 16; // 22.5 graus, em radianos.
 
     if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        g_TorsoPositionZ  += 1.0f;
+        {
+        g_TorsoPositionX += sin(g_CarAngleY) * 0.1f;
+        g_TorsoPositionZ += cos(g_CarAngleY) * 0.1f;
+        }
     if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        g_TorsoPositionX  += 1.0f;
+    g_CarAngleY += 0.1f;
     if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        g_TorsoPositionZ  -= 1.0f;
+    {
+        g_TorsoPositionX -= sin(g_CarAngleY) * 0.1f;
+        g_TorsoPositionZ -= cos(g_CarAngleY) * 0.1f;
+    }
     if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        g_TorsoPositionX  -= 1.0f;
+    g_CarAngleY -= 0.1f;
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS)
     {
