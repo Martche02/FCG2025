@@ -928,7 +928,7 @@
 	<inttypes.h>
 	<stdint.h>
 
-1750022538 source:c:\users\drows\onedrive\Área de trabalho\trabalho final fcg\fcg2025\src\main.cpp
+1750024932 source:c:\users\drows\onedrive\Área de trabalho\trabalho final fcg\fcg2025\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
@@ -945,6 +945,7 @@
 	<glm/gtc/type_ptr.hpp>
 	"utils.h"
 	"matrices.h"
+	<vector>
 
 1745854380 c:\users\drows\onedrive\Área de trabalho\trabalho final fcg\fcg2025\include\glfw\glfw3.h
 	<stddef.h>

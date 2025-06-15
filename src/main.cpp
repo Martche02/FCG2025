@@ -15,6 +15,8 @@
 //  vira
 //    #include <cstdio> // Em C++
 //
+
+#define _USE_MATH_DEFINES
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
@@ -40,6 +42,9 @@
 #include "utils.h"
 #include "matrices.h"
 
+
+#include <vector>
+
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
@@ -53,6 +58,7 @@ GLuint LoadShader_Vertex(const char* filename);   // Carrega um vertex shader
 GLuint LoadShader_Fragment(const char* filename); // Carrega um fragment shader
 void LoadShader(const char* filename, GLuint shader_id); // Função utilizada pelas duas acima
 GLuint CreateGpuProgram(GLuint vertex_shader_id, GLuint fragment_shader_id); // Cria um programa de GPU
+
 
 // Declaração de funções auxiliares para renderizar texto dentro da janela
 // OpenGL. Estas funções estão definidas no arquivo "textrendering.cpp".
@@ -91,6 +97,18 @@ struct SceneObject
     int          num_indices; // Número de índices do objeto dentro do vetor indices[] definido em BuildTriangles()
     GLenum       rendering_mode; // Modo de rasterização (GL_TRIANGLES, GL_TRIANGLE_STRIP, etc.)
 };
+
+struct Mesh //Para desenho dos cilindros
+{
+    GLuint VAO;
+    GLuint VBO;
+    GLuint EBO;
+    int num_indices;
+};
+Mesh g_CylinderMesh;
+
+Mesh CreateCylinderMesh(float radius, float height, int segments);
+void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -221,6 +239,9 @@ int main()
 
     // Inicializamos o código para renderização de texto.
     TextRendering_Init();
+
+    g_CylinderMesh = CreateCylinderMesh(1.0f, 1.0f, 32);
+
 
     // Buscamos o endereço das variáveis definidas dentro do Vertex Shader.
     // Utilizaremos estas variáveis para enviar dados para a placa de vídeo
@@ -363,21 +384,23 @@ int main()
             DrawCube(render_as_black_uniform); // Draw Canhão
         PopMatrix(model);
 
-        PushMatrix(model); // model = base do torso
-        model = model * Matrix_Translate(-0.7f, -1.05f, 1.0f); // Roda Frontal Direita
         PushMatrix(model);
-            model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
+        model = model * Matrix_Translate(-0.7f, -1.1f, 1.0f); // Posição da roda frontal direita
+        PushMatrix(model);
+            model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
+            model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            DrawCube(render_as_black_uniform); // Draw Roda Frontal Direita
+            DrawCylinder(g_CylinderMesh, render_as_black_uniform);
         PopMatrix(model);
-    PopMatrix(model);
+        PopMatrix(model);
 
     PushMatrix(model); // model = base do torso
         model = model * Matrix_Translate(-0.7f, -1.05f, -1.0f); // Roda Traseira Direita
         PushMatrix(model);
-            model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
+            model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
+            model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            DrawCube(render_as_black_uniform); // Draw Roda Traseira Direita
+            DrawCylinder(g_CylinderMesh, render_as_black_uniform);
         PopMatrix(model);
     PopMatrix(model);
 
@@ -385,25 +408,23 @@ int main()
             PushMatrix(model); // model = base do torso
             model = model * Matrix_Translate(+0.7f, -1.05f, 1.0f); // Roda frontal esquerda
 
-            // Coxa esquerda
             PushMatrix(model);
-                model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
+                model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
+                model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                DrawCube(render_as_black_uniform); // Draw Roda frontal esquerda
+                DrawCylinder(g_CylinderMesh, render_as_black_uniform);
             PopMatrix(model);
-
             PopMatrix(model);
 
             PushMatrix(model); // model = base do torso
             model = model * Matrix_Translate(+0.7f, -1.05f, -1.0f); // Roda traseira esquerda
 
-            // Coxa esquerda
             PushMatrix(model);
-                model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
+                model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
+                model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                DrawCube(render_as_black_uniform); // Draw Roda traseira esquerda
+                DrawCylinder(g_CylinderMesh, render_as_black_uniform);
             PopMatrix(model);
-
             PopMatrix(model);
 
         PopMatrix(model);
@@ -475,6 +496,107 @@ int main()
     // Fim do programa
     return 0;
 }
+
+
+
+
+
+Mesh CreateCylinderMesh(float radius, float height, int segments)
+{
+    Mesh mesh;
+    std::vector<float> vertices;
+    std::vector<unsigned int> indices;
+
+    float halfHeight = height / 2.0f;
+
+    // Gera os vértices laterais (pares de top/bottom)
+    for (int i = 0; i <= segments; ++i)
+    {
+        float theta = i * 2.0f * glm::pi<float>() / segments;
+        float x = radius * cos(theta);
+        float z = radius * sin(theta);
+
+        // Topo
+        vertices.insert(vertices.end(), { x, +halfHeight, z });
+        // Base
+        vertices.insert(vertices.end(), { x, -halfHeight, z });
+    }
+
+    // Adiciona vértices centrais das tampas
+    vertices.insert(vertices.end(), { 0.0f, +halfHeight, 0.0f }); // centro do topo
+    vertices.insert(vertices.end(), { 0.0f, -halfHeight, 0.0f }); // centro da base
+
+    int top_center_index = (segments + 1) * 2;      // índice do centro superior
+    int bottom_center_index = top_center_index + 1; // índice do centro inferior
+
+    // Triângulos das laterais
+    for (int i = 0; i < segments; ++i)
+    {
+        int top1 = i * 2;
+        int bot1 = i * 2 + 1;
+        int top2 = (i + 1) * 2;
+        int bot2 = (i + 1) * 2 + 1;
+
+        // Anti-horário
+        indices.insert(indices.end(), { top1, top2, bot1 });
+        indices.insert(indices.end(), { bot1, top2, bot2 });
+    }
+
+    // Triângulos da tampa superior
+    for (int i = 0; i < segments; ++i)
+    {
+        int top1 = i * 2;
+        int top2 = ((i + 1) % (segments + 1)) * 2;
+
+        indices.insert(indices.end(), {
+            top2, top1, top_center_index
+        });
+    }
+
+    // Triângulos da tampa inferior
+    for (int i = 0; i < segments; ++i)
+    {
+        int bot1 = i * 2 + 1;
+        int bot2 = ((i + 1) % (segments + 1)) * 2 + 1;
+
+        indices.insert(indices.end(), {
+            bottom_center_index, bot1, bot2
+        });
+    }
+
+    // Envia para a GPU
+    glGenVertexArrays(1, &mesh.VAO);
+    glGenBuffers(1, &mesh.VBO);
+    glGenBuffers(1, &mesh.EBO);
+
+    glBindVertexArray(mesh.VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mesh.VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    // layout: posição (x, y, z) em location = 0
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(0);
+
+    mesh.num_indices = indices.size();
+    return mesh;
+}
+ // Função criada com auxilio de IA
+
+void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform)
+{
+    glUniform1i(render_as_black_uniform, GL_FALSE); // ou TRUE se quiser
+    glBindVertexArray(mesh.VAO);
+    glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+
 
 // Função que pega a matriz M e guarda a mesma no topo da pilha
 void PushMatrix(glm::mat4 M)
@@ -1178,13 +1300,13 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     float delta = 3.141592 / 16; // 22.5 graus, em radianos.
 
     if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        g_TorsoPositionZ  -= 1.0f;
-    if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        g_TorsoPositionX  -= 1.0f;
-    if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
         g_TorsoPositionZ  += 1.0f;
-    if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
         g_TorsoPositionX  += 1.0f;
+    if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        g_TorsoPositionZ  -= 1.0f;
+    if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        g_TorsoPositionX  -= 1.0f;
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS)
     {
