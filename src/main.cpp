@@ -338,7 +338,7 @@ int main()
         // Guardamos matriz model atual na pilha
         PushMatrix(model);
             // Atualizamos a matriz model (multiplicação à direita) para fazer um escalamento do torso
-            model = model * Matrix_Scale(0.8f, 1.0f, 0.2f);
+            model = model * Matrix_Scale(1.2f, 1.2f, 3.0f);
             // Enviamos a matriz "model" para a placa de vídeo (GPU). Veja o
             // arquivo "shader_vertex.glsl", onde esta é efetivamente
             // aplicada em todos os pontos.
@@ -351,133 +351,60 @@ int main()
         // Tiramos da pilha a matriz model guardada anteriormente
         PopMatrix(model);
 
-        PushMatrix(model); // Guardamos matriz model atual na pilha
-            model = model * Matrix_Translate(-0.55f, 0.0f, 0.0f); // Atualizamos matriz model (multiplicação à direita) com uma translação para o braço direito
-            PushMatrix(model); // Guardamos matriz model atual na pilha
-                model = model // Atualizamos matriz model (multiplicação à direita) com a rotação do braço direito
-                      * Matrix_Rotate_Z(g_AngleZ)  // TERCEIRO rotação Z de Euler
-                      * Matrix_Rotate_Y(g_AngleY)  // SEGUNDO rotação Y de Euler
-                      * Matrix_Rotate_X(g_AngleX); // PRIMEIRO rotação X de Euler
-                PushMatrix(model); // Guardamos matriz model atual na pilha
-                    model = model * Matrix_Scale(0.2f, 0.6f, 0.2f); // Atualizamos matriz model (multiplicação à direita) com um escalamento do braço direito
-                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model)); // Enviamos matriz model atual para a GPU
-                    DrawCube(render_as_black_uniform); // Draw BRAÇO DIREITO // Desenhamos o braço direito
-                PopMatrix(model); // Tiramos da pilha a matriz model guardada anteriormente
-                PushMatrix(model); // Guardamos matriz model atual na pilha
-                    model = model * Matrix_Translate(0.0f, -0.65f, 0.0f); // Atualizamos matriz model (multiplicação à direita) com a translação do antebraço direito
-                    model = model // Atualizamos matriz model (multiplicação à direita) com a rotação do antebraço direito
-                          * Matrix_Rotate_Z(g_ForearmAngleZ)  // SEGUNDO rotação Z de Euler
-                          * Matrix_Rotate_X(g_ForearmAngleX); // PRIMEIRO rotação X de Euler
-                    PushMatrix(model); // Guardamos matriz model atual na pilha
-                        model = model * Matrix_Scale(0.2f, 0.6f, 0.2f); // Atualizamos matriz model (multiplicação à direita) com um escalamento do antebraço direito
-                        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model)); // Enviamos matriz model atual para a GPU
-                        DrawCube(render_as_black_uniform); // Draw ANTEBRAÇO DIREITO
-                    PopMatrix(model); // Tiramos da pilha a matriz model guardada anteriormente
-                    PushMatrix(model); // model = matriz final do antebraço
-                    model = model * Matrix_Translate(0.0f, -0.65f, 0.0f); // Posição mão
-                    model = model * Matrix_Scale(0.2f, 0.1f, 0.2f);    // Escala para tamanho de mão
-                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                    DrawCube(render_as_black_uniform); // Draw MÃO DIREITA
-        PopMatrix(model);
-                PopMatrix(model); // Tiramos da pilha a matriz model guardada anteriormente
-            PopMatrix(model); // Tiramos da pilha a matriz model guardada anteriormente
-        PopMatrix(model); // Tiramos da pilha a matriz model guardada anteriormente
-        PushMatrix(model); // Guardamos matriz model atual (após torso)
-        model = model * Matrix_Translate(+0.55f, 0.0f, 0.0f); // Translação para o lado esquerdo
-        PushMatrix(model);
-            model = model
-                  * Matrix_Rotate_Z(g_AngleZ)
-                  * Matrix_Rotate_Y(g_AngleY)
-                  * Matrix_Rotate_X(g_AngleX);
-            PushMatrix(model);
-                model = model * Matrix_Scale(0.2f, 0.6f, 0.2f); // Escala do braço esquerdo
-                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                DrawCube(render_as_black_uniform); // Draw BRAÇO ESQUERDO
-            PopMatrix(model);
-
-            PushMatrix(model);
-                model = model * Matrix_Translate(0.0f, -0.65f, 0.0f); // Translação do antebraço
-                model = model
-                      * Matrix_Rotate_Z(g_ForearmAngleZ)
-                      * Matrix_Rotate_X(g_ForearmAngleX);
-                PushMatrix(model);
-                    model = model * Matrix_Scale(0.2f, 0.6f, 0.2f); // Escala antebraço
-                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                    DrawCube(render_as_black_uniform); // Draw ANTEBRAÇO ESQUERDO
-                PopMatrix(model);
-
-                PushMatrix(model);
-                    model = model * Matrix_Translate(0.0f, -0.65f, 0.0f); // Translação da mão
-                    model = model * Matrix_Scale(0.2f, 0.1f, 0.2f);    // Escala da mão
-                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                    DrawCube(render_as_black_uniform); // Draw MÃO ESQUERDA
-                PopMatrix(model);
-            PopMatrix(model);
-        PopMatrix(model);
-    PopMatrix(model);
             PushMatrix(model); // model = base do torso (após translação inicial)
-            model = model * Matrix_Translate(0.0f, +0.45f, 0.0f); // Sobe até o topo do torso
+            model = model * Matrix_Translate(0.0f, +0.1f, 1.0f); // Sobe até o topo do torso
             model = model
                   * Matrix_Rotate_Z(g_AngleZ)
                   * Matrix_Rotate_Y(g_AngleY)
-                  * Matrix_Rotate_X(g_AngleX); // Aplica mesma rotação dos braços, OBS: ficou esquisito, não sei se essa era a rotação esperada
-            model = model * Matrix_Scale(0.4f, 0.4f, 0.4f); // Escala da cabeça
+                  * Matrix_Rotate_X(g_AngleX); //
+            model = model * Matrix_Scale(0.1f, 0.1f, 1.5f); // Escala do canhão
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            DrawCube(render_as_black_uniform); // Draw CABEÇA
+            DrawCube(render_as_black_uniform); // Draw Canhão
         PopMatrix(model);
 
         PushMatrix(model); // model = base do torso
-        model = model * Matrix_Translate(-0.2f, -1.05f, 0.0f); // coxa direita
+        model = model * Matrix_Translate(-0.7f, -1.05f, 1.0f); // Roda Frontal Direita
         PushMatrix(model);
             model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            DrawCube(render_as_black_uniform); // Draw COXA DIREITA
-        PopMatrix(model);
-
-        PushMatrix(model); // CANELA DIREITA
-            model = model * Matrix_Translate(0.0f, -0.7f, 0.0f);
-            PushMatrix(model);
-                model = model * Matrix_Scale(0.2f, 0.6f, 0.2f);
-                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                DrawCube(render_as_black_uniform); // Draw CANELA DIREITA
-            PopMatrix(model);
-
-            PushMatrix(model); // PÉ DIREITO
-                model = model * Matrix_Translate(0.0f, -0.65f, 0.1f);
-                model = model * Matrix_Scale(0.2f, 0.1f, 0.4f);
-                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                DrawCube(render_as_black_uniform); // Draw PÉ DIREITO
-            PopMatrix(model);
+            DrawCube(render_as_black_uniform); // Draw Roda Frontal Direita
         PopMatrix(model);
     PopMatrix(model);
 
+    PushMatrix(model); // model = base do torso
+        model = model * Matrix_Translate(-0.7f, -1.05f, -1.0f); // Roda Traseira Direita
+        PushMatrix(model);
+            model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            DrawCube(render_as_black_uniform); // Draw Roda Traseira Direita
+        PopMatrix(model);
+    PopMatrix(model);
+
+
             PushMatrix(model); // model = base do torso
-            model = model * Matrix_Translate(+0.2f, -1.05f, 0.0f); // coxa esquerda
+            model = model * Matrix_Translate(+0.7f, -1.05f, 1.0f); // Roda frontal esquerda
 
             // Coxa esquerda
             PushMatrix(model);
                 model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                DrawCube(render_as_black_uniform); // Draw COXA ESQUERDA
+                DrawCube(render_as_black_uniform); // Draw Roda frontal esquerda
             PopMatrix(model);
 
-            // Canela esquerda
+            PopMatrix(model);
+
+            PushMatrix(model); // model = base do torso
+            model = model * Matrix_Translate(+0.7f, -1.05f, -1.0f); // Roda traseira esquerda
+
+            // Coxa esquerda
             PushMatrix(model);
-                model = model * Matrix_Translate(0.0f, -0.7f, 0.0f); // canela abaixo da coxa
-                PushMatrix(model);
-                    model = model * Matrix_Scale(0.2f, 0.6f, 0.2f);
-                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                    DrawCube(render_as_black_uniform); // Draw CANELA ESQUERDA
-                PopMatrix(model);
-
-                // Pé esquerdo
-                PushMatrix(model);
-                    model = model * Matrix_Translate(0.0f, -0.65f, 0.1f); // pé abaixo da canela
-                    model = model * Matrix_Scale(0.2f, 0.1f, 0.4f);
-                    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-                    DrawCube(render_as_black_uniform); // Draw PÉ ESQUERDO
-                PopMatrix(model);
+                model = model * Matrix_Scale(0.2f, 0.65f, 0.2f);
+                glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                DrawCube(render_as_black_uniform); // Draw Roda traseira esquerda
             PopMatrix(model);
+
+            PopMatrix(model);
+
         PopMatrix(model);
 
         // Neste ponto a matriz model recuperada é a matriz inicial (translação do torso)
