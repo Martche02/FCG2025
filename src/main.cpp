@@ -351,9 +351,10 @@ int main()
 
             angular_velocity += angular_difference;
 
-            // Aplicamos amortecimento para evitar rotação infinita
+            // amortecimento para evitar rotação infinita
             angular_velocity -= angular_velocity * angular_damping * deltaTime;
-            // Finalmente aplicamos a rotação ao carro
+
+            // angulo final
             g_CarAngleY += angular_velocity * deltaTime;
         }
         else
