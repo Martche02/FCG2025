@@ -5,7 +5,7 @@
 //    INF01047 Fundamentos de Computação Gráfica
 //               Prof. Eduardo Gastal
 //
-//                   LABORATÓRIO 3
+//                   Trabalho Final: Bruno Bourscheid (550177) e Marcelo Gonda Stangler ()
 //
 
 // Arquivos "headers" padrões de C podem ser incluídos em um
@@ -172,7 +172,7 @@ int main()
     // Criamos uma janela do sistema operacional, com 800 colunas e 800 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 800, "INF01047 - 550177  - Bruno Bourscheid", NULL, NULL);
+    window = glfwCreateWindow(800, 800, "INF01047 - 550177 e - Trabalho Final", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
