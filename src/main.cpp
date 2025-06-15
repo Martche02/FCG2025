@@ -107,6 +107,18 @@ struct Mesh //Para desenho dos cilindros
 };
 Mesh g_CylinderMesh;
 
+struct InputState
+{
+    bool W = false;
+    bool A = false;
+    bool S = false;
+    bool D = false;
+}; // Criei para manter a função de callback das keys, mas tratar a movimentação na main, pois se n a movimentação ficava travada
+InputState g_Input;
+
+
+
+
 Mesh CreateCylinderMesh(float radius, float height, int segments);
 void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform);
 
@@ -261,9 +273,44 @@ int main()
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
 
+
+    float lastTime = glfwGetTime(); // para o delta time visto em aula
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
+
+
+        // Operações de movimentação
+        float currentTime = glfwGetTime(); // para o delta time visto em aula
+        float deltaTime = currentTime - lastTime;
+        lastTime = currentTime;
+
+
+        float speed = 2.0f;      // unidades por segundo
+        float rotationSpeed = 2.5f; // rad/s
+
+        if (g_Input.W)
+        {
+            g_TorsoPositionX += sin(g_CarAngleY) * speed * deltaTime;
+            g_TorsoPositionZ += cos(g_CarAngleY) * speed * deltaTime;
+        }
+        if (g_Input.S)
+        {
+            g_TorsoPositionX -= sin(g_CarAngleY) * speed * deltaTime;
+            g_TorsoPositionZ -= cos(g_CarAngleY) * speed * deltaTime;
+        }
+        if (g_Input.A)
+        {
+            g_CarAngleY += rotationSpeed * deltaTime;
+        }
+        if (g_Input.D)
+        {
+            g_CarAngleY -= rotationSpeed * deltaTime;
+}
+
+
+
         // Aqui executamos as operações de renderização
 
         // Definimos a cor do "fundo" do framebuffer como branco.  Tal cor é
@@ -1302,20 +1349,18 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
     float delta = 3.141592 / 16; // 22.5 graus, em radianos.
 
-    if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        {
-        g_TorsoPositionX += sin(g_CarAngleY) * 0.1f;
-        g_TorsoPositionZ += cos(g_CarAngleY) * 0.1f;
-        }
-    if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    g_CarAngleY += 0.1f;
-    if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT))
+
+    bool is_pressed = (action != GLFW_RELEASE);
+    switch (key)
     {
-        g_TorsoPositionX -= sin(g_CarAngleY) * 0.1f;
-        g_TorsoPositionZ -= cos(g_CarAngleY) * 0.1f;
-    }
-    if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    g_CarAngleY -= 0.1f;
+        case GLFW_KEY_W: g_Input.W = is_pressed; break;
+        case GLFW_KEY_A: g_Input.A = is_pressed; break;
+        case GLFW_KEY_S: g_Input.S = is_pressed; break;
+        case GLFW_KEY_D: g_Input.D = is_pressed; break;
+    } // Para movimentação do carro, atualiza a struct global gInput para saber qual tecla está pressionada
+
+
+
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS)
     {
