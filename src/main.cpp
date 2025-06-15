@@ -279,6 +279,14 @@ int main()
     const float max_velocity = 5.0f;
     const float acceleration = 4.0f;
     const float deceleration = 3.0f;
+    float rotation_speed = 2.5f; // rad/s
+
+
+    // Como trabalhamos com um corpo único no movimento, e não roda a roda, vou simular a resistencia na direção pela velocidade angular (+- inércia)
+    float angular_velocity = 0.0f;
+    const float angular_acceleration = 6.0f; // quanto mais alto, mais responsivo
+    float angular_damping = 4.0f;      // resistência da rotação
+
 
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
@@ -292,7 +300,6 @@ int main()
         lastTime = currentTime;
 
 
-        float rotation_speed = 2.5f; // rad/s
 
         if (g_Input.W)
         {
@@ -325,11 +332,39 @@ int main()
         g_TorsoPositionX += sin(g_CarAngleY) * car_velocity * deltaTime;
         g_TorsoPositionZ += cos(g_CarAngleY) * car_velocity * deltaTime;
 
-        // Rotação com A e D
-        if (g_Input.A)
-            g_CarAngleY += rotation_speed * deltaTime;
-        if (g_Input.D)
-            g_CarAngleY -= rotation_speed * deltaTime;
+        // Rotação com A e D proporcional à velocidade do carro, utilizei GPT para pesquisar como simulava esses calculos
+        if (car_velocity != 0.0f)
+        {
+            float direction = (car_velocity > 0.0f) ? 1.0f : -1.0f;
+            float turn_input = 0.0f;
+
+            if (g_Input.A)
+                turn_input = +1.0f;
+            if (g_Input.D)
+                turn_input = -1.0f;
+
+            float target_angular_velocity = direction * turn_input * rotation_speed * (std::abs(car_velocity) / max_velocity);
+            float angular_difference = target_angular_velocity - angular_velocity;
+            float max_change = angular_acceleration * deltaTime;
+            if (std::abs(angular_difference) > max_change)
+                angular_difference = (angular_difference > 0 ? 1 : -1) * max_change;
+
+            angular_velocity += angular_difference;
+
+            // Aplicamos amortecimento para evitar rotação infinita
+            angular_velocity -= angular_velocity * angular_damping * deltaTime;
+            // Finalmente aplicamos a rotação ao carro
+            g_CarAngleY += angular_velocity * deltaTime;
+        }
+        else
+        {
+            // Quando parado, desacelera rotação até parar
+            angular_velocity -= angular_velocity * angular_damping * deltaTime;
+        }
+
+
+
+
 
 
 
