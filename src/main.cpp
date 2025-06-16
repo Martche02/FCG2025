@@ -287,7 +287,7 @@ int main()
     const float angular_acceleration = 6.0f; // quanto mais alto, mais responsivo
     float angular_damping = 4.0f;      // resistência da rotação
 
-
+    float g_WheelAngle = 0.0f; // rotação as rodas para animar (ou tentar)
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -298,6 +298,7 @@ int main()
         float currentTime = glfwGetTime(); // para o delta time visto em aula
         float deltaTime = currentTime - lastTime;
         lastTime = currentTime;
+        g_WheelAngle += car_velocity * deltaTime * 5.0f; // velocidade da roda girando
 
 
 
@@ -331,6 +332,10 @@ int main()
         // Aplica translação com base na direção atual do carro
         g_TorsoPositionX += sin(g_CarAngleY) * car_velocity * deltaTime;
         g_TorsoPositionZ += cos(g_CarAngleY) * car_velocity * deltaTime;
+
+
+
+
 
         // Rotação com A e D proporcional à velocidade do carro, utilizei GPT para pesquisar como simulava esses calculos
         if (car_velocity != 0.0f)
@@ -497,6 +502,7 @@ int main()
         PushMatrix(model);
             model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
             model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
+            model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             DrawCylinder(g_CylinderMesh, render_as_black_uniform);
         PopMatrix(model);
@@ -507,6 +513,7 @@ int main()
         PushMatrix(model);
             model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
             model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
+            model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             DrawCylinder(g_CylinderMesh, render_as_black_uniform);
         PopMatrix(model);
@@ -519,6 +526,7 @@ int main()
             PushMatrix(model);
                 model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
                 model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
+                model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
                 DrawCylinder(g_CylinderMesh, render_as_black_uniform);
             PopMatrix(model);
@@ -530,6 +538,7 @@ int main()
             PushMatrix(model);
                 model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
                 model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
+                model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
                 DrawCylinder(g_CylinderMesh, render_as_black_uniform);
             PopMatrix(model);
@@ -698,7 +707,7 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
 
 void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform)
 {
-    glUniform1i(render_as_black_uniform, GL_FALSE); // ou TRUE se quiser
+    glUniform1i(render_as_black_uniform, GL_FALSE);
     glBindVertexArray(mesh.VAO);
     glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
