@@ -12,11 +12,16 @@ layout (location = 1) in vec4 color_coefficients;
 out vec4 cor_interpolada_pelo_rasterizador;
 out vec4 position_world;
 out vec3 normal_world;
+out vec3 gouraud_color;
 // Matrizes computadas no código C++ e enviadas para a GPU
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-
+uniform vec4 camera_position;
+uniform vec4 light_position;
+uniform vec3 Ia;
+uniform vec3 Id;
+uniform vec3 Is;
 // Variável booleana no código C++ também enviada para a GPU
 uniform bool render_as_black;
 
@@ -48,6 +53,26 @@ void main()
 
     position_world = model * model_coefficients;
     normal_world = normalize(transpose(inverse(mat3(model))) * vec3(0.0, 0.0, 1.0));
+
+    //---FONTE: CHATGPT
+    vec3 P = (model * model_coefficients).xyz;
+    vec3 N = normalize(transpose(inverse(mat3(model))) * vec3(0.0, 0.0, 1.0));
+    vec3 L = normalize(light_position.xyz - P);
+    vec3 V = normalize(camera_position.xyz - P);
+    vec3 R = reflect(-L, N);
+
+    // Gouraud: computa iluminação no vértice
+    vec3 ka = vec3(0.2, 0.2, 0.2); // ou baseado no objeto
+    vec3 kd = color_coefficients.rgb;
+    vec3 ks = vec3(0.5);
+    float shininess = 32.0;
+
+    float lambert = max(dot(N, L), 0.0);
+    float phong = pow(max(dot(R, V), 0.0), shininess);
+
+    gouraud_color = Ia * ka + Id * kd * lambert + Is * ks * phong;
+    //---FIM
+
     if ( render_as_black )
     {
         // Ignoramos o atributo cor dos vértices, colocando a cor final como

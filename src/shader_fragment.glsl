@@ -7,10 +7,16 @@
 in vec4 cor_interpolada_pelo_rasterizador;
 in vec4 position_world;
 in vec3 normal_world;
+in vec3 gouraud_color;
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec4 color;
 
 uniform vec4 camera_position;//glUniform
+uniform vec4 light_position;
+
+uniform vec3 Ia;
+uniform vec3 Id;
+uniform vec3 Is;
 
 void main()
 {
@@ -18,21 +24,36 @@ void main()
     vec3 v = normalize(vec3(camera_position) - vec3(position_world));
 
     //---FONTE: CHATGPT
-    // Iluminação ambiente
-    vec3 ambient = vec3(0.2, 0.2, 0.2);
+    vec3 P = position_world.xyz;
+    vec3 L = normalize(light_position.xyz - P);
+    vec3 V = normalize(camera_position.xyz - P);
+    vec3 R = reflect(-L, normal_world);
+    vec3 H = normalize(L + V);
 
-    // Iluminação difusa (Lambert)
-    float diff = max(dot(normal_world, l), 0.0);
-    vec3 kd = vec3(0.8, 0.4, 0.08); // cor difusa
-    vec3 diffuse = kd * diff;
+    // Coeficientes espectrais (ajuste conforme o objeto)
+    vec3 ka = vec3(0.2); // Ambiente
+    vec3 kd = cor_interpolada_pelo_rasterizador.rgb;
+    vec3 ks = vec3(0.5);
+    float shininess = 32.0;
 
-    // Iluminação especular (Blinn-Phong)
-    vec3 h = normalize(l + v);
-    float spec = pow(max(dot(normal_world, h), 0.0), 32.0);
-    vec3 ks = vec3(0.8, 0.8, 0.8); // cor especular
-    vec3 specular = ks * spec;
+    // Modelo Lambert
+    float lambert = max(dot(normal_world, L), 0.0);
 
-    color = vec4(ambient + diffuse + specular, 1.0);
+    // Blinn-Phong
+    float blinn = pow(max(dot(normal_world, H), 0.0), shininess);
+
+    // Phong clássico
+    float phong = pow(max(dot(R, V), 0.0), shininess);
+
+    vec3 ambient  = Ia * ka;
+    vec3 diffuse  = Id * kd * lambert;
+    vec3 specular_blinn  = Is * ks * blinn;
+    vec3 specular_phong  = Is * ks * phong;
+
+    vec3 color_total = ambient + diffuse + 0.5 * (specular_blinn + specular_phong);
+
+    // Somar com Gouraud interpolado
+    color = vec4(color_total, 1.0) + vec4(gouraud_color, 0.0);
     //---FIM
 }
 

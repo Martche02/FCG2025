@@ -5,7 +5,7 @@
 //    INF01047 Fundamentos de Computação Gráfica
 //               Prof. Eduardo Gastal
 //
-//                   Trabalho Final: Bruno Bourscheid (550177) e Marcelo Gonda Stangler ()
+//                   Trabalho Final: Bruno Bourscheid (550177) e Marcelo Gonda Stangler (587562)
 //
 
 // Arquivos "headers" padrões de C podem ser incluídos em um
@@ -205,7 +205,7 @@ int main()
     // Criamos uma janela do sistema operacional, com 800 colunas e 800 linhas
     // de pixels, e com título "INF01047 ...".
     GLFWwindow* window;
-    window = glfwCreateWindow(800, 800, "INF01047 - 550177 e - Trabalho Final", NULL, NULL);
+    window = glfwCreateWindow(800, 800, "INF01047 - 550177 e 587562 - Trabalho Final", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -392,7 +392,6 @@ int main()
         // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
         // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
-
         // "Ligamos" o VAO. Informamos que queremos utilizar os atributos de
         // vértices apontados pelo VAO criado pela função BuildTriangles(). Veja
         // comentários detalhados dentro da definição de BuildTriangles().
@@ -435,8 +434,17 @@ int main()
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
         //---FONTE: CHATGPT
-        GLint camera_pos_uniform = glGetUniformLocation(g_GpuProgramID, "camera_position");
-        glUniform4fv(camera_pos_uniform, 1, glm::value_ptr(camera_position_c));
+        GLint light_pos_uniform     = glGetUniformLocation(g_GpuProgramID, "light_position");
+        GLint camera_pos_uniform    = glGetUniformLocation(g_GpuProgramID, "camera_position");
+        GLint Ia_uniform            = glGetUniformLocation(g_GpuProgramID, "Ia");
+        GLint Id_uniform            = glGetUniformLocation(g_GpuProgramID, "Id");
+        GLint Is_uniform            = glGetUniformLocation(g_GpuProgramID, "Is");
+
+        glUniform4f(light_pos_uniform, 0.0f, 3.0f, 3.0f, 1.0f);
+        glUniform4f(camera_pos_uniform, camera_position_c.x, camera_position_c.y, camera_position_c.z, camera_position_c.w);
+        glUniform3f(Ia_uniform, 0.2f, 0.2f, 0.2f);
+        glUniform3f(Id_uniform, 1.0f, 1.0f, 1.0f);
+        glUniform3f(Is_uniform, 1.0f, 1.0f, 1.0f);
         //---FIM
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
