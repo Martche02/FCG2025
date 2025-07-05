@@ -10,7 +10,8 @@ layout (location = 1) in vec4 color_coefficients;
 // para cada fragmento, os quais serão recebidos como entrada pelo Fragment
 // Shader. Veja o arquivo "shader_fragment.glsl".
 out vec4 cor_interpolada_pelo_rasterizador;
-
+out vec4 position_world;
+out vec3 normal_world;
 // Matrizes computadas no código C++ e enviadas para a GPU
 uniform mat4 model;
 uniform mat4 view;
@@ -45,6 +46,8 @@ void main()
     //     gl_Position.w = model_coefficients.w;
     //
 
+    position_world = model * model_coefficients;
+    normal_world = normalize(transpose(inverse(mat3(model))) * vec3(0.0, 0.0, 1.0));
     if ( render_as_black )
     {
         // Ignoramos o atributo cor dos vértices, colocando a cor final como

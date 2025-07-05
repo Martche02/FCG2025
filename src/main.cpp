@@ -424,14 +424,20 @@ int main()
             glm::vec4 dir = glm::normalize(g_CannonMatrix * glm::vec4(0.0f, 0.0f, 3.0f, 0.0f));
             glm::vec4 up_cannon  = glm::normalize(g_CannonMatrix * glm::vec4(0.0f, 1.0f, 0.0f, 0.0f));
 
+            // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
+            // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
             camera_lookat_l     = fogo + up_cannon * 1.0f;
             camera_position_c   = camera_lookat_l - 10.0f * dir;
-            camera_view_vector  = camera_lookat_l - camera_position_c;
+            camera_view_vector  = dir;
         }
 
 
         glm::vec4 camera_up_vector   = glm::vec4(0.0f,1.0f,0.0f,0.0f); // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
+        //---FONTE: CHATGPT
+        GLint camera_pos_uniform = glGetUniformLocation(g_GpuProgramID, "camera_position");
+        glUniform4fv(camera_pos_uniform, 1, glm::value_ptr(camera_position_c));
+        //---FIM
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector);
