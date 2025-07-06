@@ -299,7 +299,7 @@ int main()
         float currentTime = glfwGetTime(); // para o delta time visto em aula
         float deltaTime = currentTime - lastTime;
         lastTime = currentTime;
-        g_WheelAngle += car_velocity * deltaTime * 5.0f; // velocidade da roda girando
+        g_WheelAngle += car_velocity * deltaTime * -5.0f; // velocidade da roda girando
 
 
 
@@ -686,16 +686,16 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
     vertices.insert(vertices.end(), { 0.0f, +halfHeight, 0.0f }); // centro do topo
     vertices.insert(vertices.end(), { 0.0f, -halfHeight, 0.0f }); // centro da base
 
-    int top_center_index = (segments + 1) * 2;      // índice do centro superior
-    int bottom_center_index = top_center_index + 1; // índice do centro inferior
+    unsigned int top_center_index = (segments + 1) * 2;      // índice do centro superior
+    unsigned int bottom_center_index = top_center_index + 1; // índice do centro inferior
 
     // Triângulos das laterais
     for (int i = 0; i < segments; ++i)
     {
-        int top1 = i * 2;
-        int bot1 = i * 2 + 1;
-        int top2 = (i + 1) * 2;
-        int bot2 = (i + 1) * 2 + 1;
+        unsigned int top1 = i * 2;
+        unsigned int bot1 = i * 2 + 1;
+        unsigned int top2 = (i + 1) * 2;
+        unsigned int bot2 = (i + 1) * 2 + 1;
 
         // Anti-horário
         indices.insert(indices.end(), { top1, top2, bot1 });
@@ -705,8 +705,8 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
     // Triângulos da tampa superior
     for (int i = 0; i < segments; ++i)
     {
-        int top1 = i * 2;
-        int top2 = ((i + 1) % (segments + 1)) * 2;
+        unsigned int top1 = i * 2;
+        unsigned int top2 = ((i + 1) % (segments + 1)) * 2;
 
         indices.insert(indices.end(), {
             top2, top1, top_center_index
@@ -716,8 +716,8 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
     // Triângulos da tampa inferior
     for (int i = 0; i < segments; ++i)
     {
-        int bot1 = i * 2 + 1;
-        int bot2 = ((i + 1) % (segments + 1)) * 2 + 1;
+        unsigned int bot1 = i * 2 + 1;
+        unsigned int bot2 = ((i + 1) % (segments + 1)) * 2 + 1;
 
         indices.insert(indices.end(), {
             bottom_center_index, bot1, bot2
