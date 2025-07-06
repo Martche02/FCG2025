@@ -456,7 +456,7 @@ int main()
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -10.0f; // Posição do "far plane"
+        float farplane  = -100.0f; // Posição do "far plane"
 
         if (g_UsePerspectiveProjection)
         {
@@ -486,7 +486,6 @@ int main()
         glUniformMatrix4fv(projection_uniform , 1 , GL_FALSE , glm::value_ptr(projection));
 
         // Draw# TAREFAS DO LABORATÓRIO 3
-
         // Cada cópia do cubo possui uma matriz de modelagem independente,
         // já que cada cópia estará em uma posição (rotação, escala, ...)
         // diferente em relação ao espaço global (World Coordinates). Veja
@@ -499,7 +498,17 @@ int main()
         // Veja slides 243-273 do documento Aula_08_Sistemas_de_Coordenadas.pdf
         //
         glm::mat4 model = Matrix_Identity(); // Transformação inicial = identidade.
+        // Desenha cubo-pista visto de dentro
+        glDisable(GL_CULL_FACE);
 
+        PushMatrix(model);
+            model = model * Matrix_Translate(0.0f, 2.55f, 0.0f); // eleva o cubo
+            model = model * Matrix_Scale(20.0f, 3.0f, 50.0f);   // largura, altura, profundidade
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            DrawCube(render_as_black_uniform);
+        PopMatrix(model);
+
+        glEnable(GL_CULL_FACE);
         // Translação inicial do torso
         model = model * Matrix_Translate(g_TorsoPositionX - 1.0f, g_TorsoPositionY + 1.0f, g_TorsoPositionZ + 0.0f);
         model = model * Matrix_Rotate_Y(g_CarAngleY);
@@ -532,7 +541,7 @@ int main()
         PopMatrix(model);
 
         PushMatrix(model);
-        model = model * Matrix_Translate(-0.7f, -1.1f, 1.0f); // Posição da roda frontal direita
+        model = model * Matrix_Translate(-0.7f, -1.05f, 1.0f); // Posição da roda frontal direita
         PushMatrix(model);
             model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
             model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
