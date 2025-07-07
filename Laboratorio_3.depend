@@ -928,7 +928,7 @@
 	<inttypes.h>
 	<stdint.h>
 
-1750028994 source:c:\users\drows\onedrive\햞ea de trabalho\trabalho final fcg\fcg2025\src\main.cpp
+1751864005 source:c:\users\drows\onedrive\햞ea de trabalho\trabalho final fcg\fcg2025\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
@@ -946,6 +946,9 @@
 	"utils.h"
 	"matrices.h"
 	<vector>
+	"stb_image.h"
+	<tiny_obj_loader.h>
+	<glm/vec2.hpp>
 
 1745854380 c:\users\drows\onedrive\햞ea de trabalho\trabalho final fcg\fcg2025\include\glfw\glfw3.h
 	<stddef.h>
@@ -2750,5 +2753,42 @@
 	"mapbox/earcut.hpp"
 
 1750005167 source:c:\users\marce\codes\fcg\fcg2025\src\tiny_obj_loader.cpp
+	"tiny_obj_loader.h"
+
+1751856930 c:\users\drows\onedrive\햞ea de trabalho\trabalho final fcg\fcg2025\include\stb_image.h
+	"stb_image.h"
+	<stdio.h>
+	<stdarg.h>
+	<stddef.h>
+	<stdlib.h>
+	<string.h>
+	<limits.h>
+	<math.h>
+	<stdio.h>
+	<assert.h>
+	<stdint.h>
+	<emmintrin.h>
+	<intrin.h>
+	<arm_neon.h>
+
+1751864005 c:\users\drows\onedrive\햞ea de trabalho\trabalho final fcg\fcg2025\include\tiny_obj_loader.h
+	<map>
+	<string>
+	<vector>
+	<cassert>
+	<cctype>
+	<cmath>
+	<cstddef>
+	<cstdlib>
+	<cstring>
+	<fstream>
+	<limits>
+	<set>
+	<sstream>
+	<utility>
+	<array>
+	"mapbox/earcut.hpp"
+
+1751864005 source:c:\users\drows\onedrive\햞ea de trabalho\trabalho final fcg\fcg2025\src\tiny_obj_loader.cpp
 	"tiny_obj_loader.h"
 

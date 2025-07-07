@@ -51,6 +51,7 @@
 
 
 #include <glm/vec2.hpp>
+#include <algorithm>
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
@@ -148,15 +149,16 @@ struct BoundingObject {
     float angleY;       // Rotação em torno do eixo Y (em radianos)
     float width;        // Largura (em X)
     float length;       // Comprimento (em Z)
+    float height;       // Altura (Y)
     int type; // 1- Box, 2- Sphere, 3- Triangle
     float radius = 0.0f; // Para esfera
     glm::vec2 v0, v1, v2; // coordenadas absolutas dos vértices quando triangulo
 
     BoundingObject(int id, float x, float z, float angleY, // Construtor
-                   float width, float length, int type, float radius,
+                   float width, float length, float height, int type, float radius,
                    glm::vec2 v0, glm::vec2 v1, glm::vec2 v2)
                     : id(id), x(x), z(z), angleY(angleY),
-                      width(width), length(length), type(type),
+                      width(width), length(length), height(height), type(type),
                       radius(radius), v0(v0), v1(v1), v2(v2) {}
 };
 
@@ -176,7 +178,7 @@ bool RayHitsSphere(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 center, floa
 bool RayHitsTriangle(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2);
 BoundingObject MakeTriangle(int id, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2);
 BoundingObject MakeSphere(int id, float x, float z, float radius);
-BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length);
+BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length, float height);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -408,7 +410,11 @@ int main()
 
 
     // Inserindo obstáculos no vetor obstacles
-    obstacles.push_back(MakeBox(1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f));
+    obstacles.push_back(MakeBox(1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f, 1.2f));
+    obstacles.push_back(MakeBox(2, 2.5f, 4.0f, 0.2f, 1.0f, 2.0f, 1.0f));
+    obstacles.push_back(MakeBox(3, -3.0f, 4.5f, 0.0f, 1.0f, 1.5f, 1.0f));
+    obstacles.push_back(MakeBox(4, 1.5f, 6.0f, 0.0f, 0.8f, 2.5f, 0.8f));
+    obstacles.push_back(MakeBox(5, -2.0f, -3.0f, 0.3f, 1.0f, 1.8f, 1.0f));
 
 // --- Coelho OBJ
 //---FONTE CHATGPT
@@ -764,13 +770,20 @@ glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
         glDisable(GL_CULL_FACE);
 
 
-        //Desenha obstáculo
-        model = model * Matrix_Translate(4.0f, 1.2f, 5.0f); // Obstáculo exemplo
-            model = model * Matrix_Scale(1.2f, 1.2f, 3.0f);   // largura, altura, profundidade
-            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            DrawCube(render_as_black_uniform);
-        PopMatrix(model);
 
+        for (const auto& obj : obstacles) // Desenha todos os obstaculos que são do tipo Box
+            {
+                if (obj.type == 1)
+                {
+                    PushMatrix(model);
+                        model = model * Matrix_Translate(obj.x, obj.height, obj.z);
+                        model = model * Matrix_Scale(obj.width, obj.height, obj.length);
+                        model = model * Matrix_Rotate_Y(obj.angleY); // caso tenha rotação
+                        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                        DrawCube(render_as_black_uniform);
+                    PopMatrix(model);
+                }
+            }
 
         PushMatrix(model);
             model = model * Matrix_Translate(0.0f, 2.55f, 0.0f); // eleva o Mapa (Cubo)
@@ -1274,13 +1287,13 @@ CollisionSides CheckAllCollisions(
     return result;
 }
 
-BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length)
+BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length, float height)
 {
     return BoundingObject(
         id,
         x, z,
         angleY,
-        width, length,
+        width, length, height,
         1,                 // type = 1 (Box)
         0.0f,              // radius (não usado)
         glm::vec2(0.0f),   // v0
@@ -1295,7 +1308,7 @@ BoundingObject MakeSphere(int id, float x, float z, float radius)
         id,
         x, z,
         0.0f,              // angleY (não usado para esfera)
-        0.0f, 0.0f,        // width, length (não usados)
+        0.0f, 0.0f, 0.0f,        // width, length, height (não usados)
         2,                 // type = 2 (Sphere)
         radius,            // radius usado
         glm::vec2(0.0f),   // v0
@@ -1310,7 +1323,7 @@ BoundingObject MakeTriangle(int id, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2)
         id,
         0.0f, 0.0f,        // x, z (opcional para triângulo)
         0.0f,              // angleY
-        0.0f, 0.0f,        // width, length
+        0.0f, 0.0f, 0.0f,        // width, length
         3,                 // type = 3 (Triangle)
         0.0f,              // radius (não usado)
         v0, v1, v2
