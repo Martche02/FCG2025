@@ -4,7 +4,8 @@
 // Veja a função BuildTriangle() em "main.cpp".
 layout (location = 0) in vec4 model_coefficients;
 layout (location = 1) in vec4 color_coefficients;
-
+layout(location = 2) in vec2 texcoords;
+out vec2 texcoords_frag;
 // Atributos de vértice que serão gerados como saída ("out") pelo Vertex Shader.
 // ** Estes serão interpolados pelo rasterizador! ** gerando, assim, valores
 // para cada fragmento, os quais serão recebidos como entrada pelo Fragment
@@ -87,5 +88,6 @@ void main()
         // arquivo "shader_fragment.glsl".
         cor_interpolada_pelo_rasterizador = color_coefficients;
     }
+    texcoords_frag = texcoords;
 }
 
