@@ -48,6 +48,8 @@
 #include "stb_image.h"
 
 
+#include <glm/vec2.hpp>
+
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
@@ -144,6 +146,15 @@ struct BoundingObject {
     float width;        // Largura (em X)
     float length;       // Comprimento (em Z)
     int type; // 1- Box, 2- Sphere, 3- Triangle
+    float radius = 0.0f; // Para esfera
+    glm::vec2 v0, v1, v2; // coordenadas absolutas dos vértices quando triangulo
+
+    BoundingObject(int id, float x, float z, float angleY, // Construtor
+                   float width, float length, int type, float radius,
+                   glm::vec2 v0, glm::vec2 v1, glm::vec2 v2)
+                    : id(id), x(x), z(z), angleY(angleY),
+                      width(width), length(length), type(type),
+                      radius(radius), v0(v0), v1(v1), v2(v2) {}
 };
 
 
@@ -158,6 +169,11 @@ void FireCannon(float carX, float carZ, float carAngleY);
 bool RaySegmentIntersect(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 p1, glm::vec2 p2);
 bool RayHitsBoundingBox(const BoundingObject& obs, glm::vec2 rayOrigin, glm::vec2 rayDir);
 float Cross2D(glm::vec2 a, glm::vec2 b);
+bool RayHitsSphere(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 center, float radius);
+bool RayHitsTriangle(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2);
+BoundingObject MakeTriangle(int id, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2);
+BoundingObject MakeSphere(int id, float x, float z, float radius);
+BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -374,7 +390,7 @@ int main()
 
 
     // Inserindo obstáculos no vetor obstacles
-    obstacles.push_back({1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f, 1});
+    obstacles.push_back(MakeBox(1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f));
 
 
 
@@ -857,19 +873,36 @@ void FireCannon(float carX, float carZ, float carAngleY)
 
     for (size_t i = 0; i < obstacles.size(); ++i)
     {
-        const auto& obs = obstacles[i];
+        const auto& obj = obstacles[i];
+        bool hit = false;
 
-        if (obs.type != 1)
-            continue; // ignora objetos que não são caixas
+        if (obj.type == 1) {
+            hit = RayHitsBoundingBox(obj, rayOrigin, rayDir);
+        }
+        else if (obj.type == 2) {
+            float radius = obj.width * 0.5f; // ou outro campo
+            glm::vec2 center(obj.x, obj.z);
+            hit = RayHitsSphere(rayOrigin, rayDir, center, radius);
+        }
+        else if (obj.type == 3) {
+            // Exemplo: triângulo definido em torno da posição
+            float size = obj.width; // ou outro valor arbitrário
 
-        if (RayHitsBoundingBox(obs, rayOrigin, rayDir))
-        {
-            printf("ATINGIU!! (ID %d)\n", obs.id);
+            glm::vec2 v0 = glm::vec2(obj.x, obj.z + size);
+            glm::vec2 v1 = glm::vec2(obj.x - size, obj.z - size);
+            glm::vec2 v2 = glm::vec2(obj.x + size, obj.z - size);
+
+            hit = RayHitsTriangle(rayOrigin, rayDir, v0, v1, v2);
+        }
+
+        if (hit) {
+            printf("ATINGIU!! (ID %d, TYPE %d)\n", obj.id, obj.type);
             obstacles.erase(obstacles.begin() + i);
             break;
         }
     }
 }
+
 
 
 
@@ -929,6 +962,46 @@ bool RayHitsBoundingBox(const BoundingObject& obs, glm::vec2 rayOrigin, glm::vec
 
     return false;
 }
+
+bool RayHitsSphere(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 center, float radius)
+{
+    glm::vec2 L = center - rayOrigin;
+
+    float a = glm::dot(rayDir, rayDir);              // geralmente 1.0 (rayDir normalizado)
+    float b = 2.0f * glm::dot(rayDir, L);
+    float c = glm::dot(L, L) - radius * radius;
+
+    float discriminant = b * b - 4.0f * a * c;
+
+    if (discriminant < 0.0f)
+        return false; // sem interseção real
+
+    float t = (-b - sqrt(discriminant)) / (2.0f * a);
+    return t >= 0.0f; // atingiu se t positivo
+}
+
+
+bool RayHitsTriangle(glm::vec2 rayOrigin, glm::vec2 rayDir,
+                     glm::vec2 v0, glm::vec2 v1, glm::vec2 v2)
+{
+    // Converter para "Möller–Trumbore 2D" (barycentric test)
+
+    glm::vec2 e1 = v1 - v0;
+    glm::vec2 e2 = v2 - v0;
+    glm::vec2 h(-rayDir.y, rayDir.x); // perpendicular 2D
+
+    float det = glm::dot(e1, h);
+    if (fabs(det) < 1e-6) return false; // paralelo
+
+    float u = glm::dot(rayOrigin - v0, h) / det;
+    if (u < 0.0f || u > 1.0f) return false;
+
+    glm::vec2 q = rayOrigin - v0 - u * e1;
+    float v = glm::dot(rayDir, q) / glm::dot(e2, rayDir);
+
+    return (v >= 0.0f && u + v <= 1.0f);
+}
+
 
 
 CollisionSides CheckBoxCollision(
@@ -1085,7 +1158,48 @@ CollisionSides CheckAllCollisions(
     return result;
 }
 
+BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length)
+{
+    return BoundingObject(
+        id,
+        x, z,
+        angleY,
+        width, length,
+        1,                 // type = 1 (Box)
+        0.0f,              // radius (não usado)
+        glm::vec2(0.0f),   // v0
+        glm::vec2(0.0f),   // v1
+        glm::vec2(0.0f)    // v2
+    );
+}
 
+BoundingObject MakeSphere(int id, float x, float z, float radius)
+{
+    return BoundingObject(
+        id,
+        x, z,
+        0.0f,              // angleY (não usado para esfera)
+        0.0f, 0.0f,        // width, length (não usados)
+        2,                 // type = 2 (Sphere)
+        radius,            // radius usado
+        glm::vec2(0.0f),   // v0
+        glm::vec2(0.0f),   // v1
+        glm::vec2(0.0f)    // v2
+    );
+}
+
+BoundingObject MakeTriangle(int id, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2)
+{
+    return BoundingObject(
+        id,
+        0.0f, 0.0f,        // x, z (opcional para triângulo)
+        0.0f,              // angleY
+        0.0f, 0.0f,        // width, length
+        3,                 // type = 3 (Triangle)
+        0.0f,              // radius (não usado)
+        v0, v1, v2
+    );
+}
 
 
 Mesh CreateCylinderMesh(float radius, float height, int segments)
