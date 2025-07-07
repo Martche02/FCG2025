@@ -928,7 +928,7 @@
 	<inttypes.h>
 	<stdint.h>
 
-1751864005 source:c:\users\drows\onedrive\Área de trabalho\trabalho final fcg\fcg2025\src\main.cpp
+1751866767 source:c:\users\drows\onedrive\Área de trabalho\trabalho final fcg\fcg2025\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
@@ -949,6 +949,7 @@
 	"stb_image.h"
 	<tiny_obj_loader.h>
 	<glm/vec2.hpp>
+	<algorithm>
 
 1745854380 c:\users\drows\onedrive\Área de trabalho\trabalho final fcg\fcg2025\include\glfw\glfw3.h
 	<stddef.h>
