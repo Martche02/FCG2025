@@ -8,52 +8,88 @@ in vec4 cor_interpolada_pelo_rasterizador;
 in vec4 position_world;
 in vec3 normal_world;
 in vec3 gouraud_color;
-// O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
-out vec4 color;
+in vec2 texcoords_frag;
 
-uniform vec4 camera_position;//glUniform
+uniform sampler2D texture_image;
+uniform sampler2D texture_roda;
+uniform int object_id;
+
+uniform vec4 camera_position;
 uniform vec4 light_position;
-
 uniform vec3 Ia;
 uniform vec3 Id;
 uniform vec3 Is;
 
+out vec4 color;
+
 void main()
 {
-    vec3 l = normalize(vec3(0.0, 4.0, 4.0) - vec3(position_world));
-    vec3 v = normalize(vec3(camera_position) - vec3(position_world));
+    vec4 tex_color;
+    vec2 scaled_uv;
 
-    //---FONTE: CHATGPT
+    if (object_id == 0 || object_id == 2) {
+        vec3 N = normalize(normal_world);
+        float u, v;
+
+        if (abs(N.z) > abs(N.x) && abs(N.z) > abs(N.y)) {
+            // Frente/traseira → plano XY
+            u = mod(position_world.x, 1.0);
+            v = mod(position_world.y, 1.0);
+        }
+        else if (abs(N.x) > abs(N.y)) {
+            // Laterais → plano YZ
+            u = mod(position_world.z, 1.0);
+            v = mod(position_world.y, 1.0);
+        }
+        else {
+            // Topo/base → plano XZ
+            u = mod(position_world.x, 1.0);
+            v = mod(position_world.z, 1.0);
+        }
+
+        if (u < 0.0) u += 1.0;
+        if (v < 0.0) v += 1.0;
+        scaled_uv = vec2(u, v);
+    }
+    else {
+        scaled_uv = texcoords_frag;
+    }
+    if (object_id == 0)
+        tex_color = texture(texture_image, scaled_uv);
+    else if (object_id == 1)
+        tex_color = texture(texture_roda, scaled_uv); // ou texcoords_frag se preferir
+    else
+        tex_color = vec4(1.0);
     vec3 P = position_world.xyz;
+    vec3 N = normalize(normal_world);
     vec3 L = normalize(light_position.xyz - P);
     vec3 V = normalize(camera_position.xyz - P);
-    vec3 R = reflect(-L, normal_world);
+    vec3 R = reflect(-L, N);
     vec3 H = normalize(L + V);
 
-    // Coeficientes espectrais (ajuste conforme o objeto)
-    vec3 ka = vec3(0.2); // Ambiente
-    vec3 kd = cor_interpolada_pelo_rasterizador.rgb;
+    vec3 ka = vec3(2.6);
+    vec3 kd = vec3(1.0);
     vec3 ks = vec3(0.5);
     float shininess = 32.0;
 
-    // Modelo Lambert
-    float lambert = max(dot(normal_world, L), 0.0);
+    float lambert = max(dot(N, L), 0.0);
+    float blinn   = pow(max(dot(N, H), 0.0), shininess);
+    float phong   = pow(max(dot(R, V), 0.0), shininess);
 
-    // Blinn-Phong
-    float blinn = pow(max(dot(normal_world, H), 0.0), shininess);
+    vec3 ambient = Ia * ka;
+    vec3 diffuse = Id * kd * lambert;
+    vec3 specular_blinn = Is * ks * blinn;
+    vec3 specular_phong = Is * ks * phong;
 
-    // Phong clássico
-    float phong = pow(max(dot(R, V), 0.0), shininess);
+    vec3 color_total;
 
-    vec3 ambient  = Ia * ka;
-    vec3 diffuse  = Id * kd * lambert;
-    vec3 specular_blinn  = Is * ks * blinn;
-    vec3 specular_phong  = Is * ks * phong;
-
-    vec3 color_total = ambient + diffuse + 0.5 * (specular_blinn + specular_phong);
-
-    // Somar com Gouraud interpolado
-    color = vec4(color_total, 1.0) + vec4(gouraud_color, 0.0);
-    //---FIM
+    if (object_id == 1) {
+        // Roda: apenas iluminação ambiente
+        color_total = ambient;
+        color = vec4(color_total, 1.0) * tex_color;
+    } else {
+        color_total = ambient + diffuse + 0.5 * (specular_blinn + specular_phong);
+        color = vec4(color_total, 1.0) * tex_color + vec4(gouraud_color, 0.0);
+    }
 }
 

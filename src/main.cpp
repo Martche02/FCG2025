@@ -44,12 +44,18 @@
 
 
 #include <vector>
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
 glm::mat4 g_CannonMatrix;
+GLuint g_TextureCubao;
+GLuint g_TextureRoda;
+
+
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
 // logo após a definição de main() neste arquivo.
 void DrawCube(GLint render_as_black_uniform); // Desenha um cubo
@@ -286,8 +292,40 @@ int main()
     // Inicializamos o código para renderização de texto.
     TextRendering_Init();
 
+    int width, height, channels;
+    unsigned char *image = stbi_load("../../data/chatgpt_psicodelico.png", &width, &height, &channels, 0);
+    if (!image) {
+        fprintf(stderr, "Erro ao carregar textura chatgpt_psicodelico.png\n");
+        std::exit(EXIT_FAILURE);
+    }
+
+    glGenTextures(1, &g_TextureCubao);
+    glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, (channels == 4 ? GL_RGBA : GL_RGB), GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(image);
+
     g_CylinderMesh = CreateCylinderMesh(1.0f, 1.0f, 32);
 
+    unsigned char *image_roda = stbi_load("../../data/roda.png", &width, &height, &channels, 0);
+    if (!image_roda) {
+        fprintf(stderr, "Erro ao carregar textura roda.png\n");
+        std::exit(EXIT_FAILURE);
+    }
+
+    glGenTextures(1, &g_TextureRoda);
+    glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, (channels == 4 ? GL_RGBA : GL_RGB), GL_UNSIGNED_BYTE, image_roda);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(image_roda);
 
     // Buscamos o endereço das variáveis definidas dentro do Vertex Shader.
     // Utilizaremos estas variáveis para enviar dados para a placa de vídeo
@@ -296,7 +334,12 @@ int main()
     GLint view_uniform            = glGetUniformLocation(g_GpuProgramID, "view"); // Variável da matriz "view" em shader_vertex.glsl
     GLint projection_uniform      = glGetUniformLocation(g_GpuProgramID, "projection"); // Variável da matriz "projection" em shader_vertex.glsl
     GLint render_as_black_uniform = glGetUniformLocation(g_GpuProgramID, "render_as_black"); // Variável booleana em shader_vertex.glsl
+    GLint object_id_uniform = glGetUniformLocation(g_GpuProgramID, "object_id");
+    GLint tex_image_uniform = glGetUniformLocation(g_GpuProgramID, "texture_image");
+    GLint tex_roda_uniform  = glGetUniformLocation(g_GpuProgramID, "texture_roda");
 
+    glUniform1i(tex_image_uniform, 0); // GL_TEXTURE0
+    glUniform1i(tex_roda_uniform, 1);  // GL_TEXTURE1
     // Habilitamos o Z-buffer. Veja slides 104-116 do documento Aula_09_Projecoes.pdf.
     glEnable(GL_DEPTH_TEST);
 
@@ -485,6 +528,10 @@ int main()
         // Pedimos para a GPU utilizar o programa de GPU criado acima (contendo
         // os shaders de vértice e fragmentos).
         glUseProgram(g_GpuProgramID);
+        GLint texture_uniform = glGetUniformLocation(g_GpuProgramID, "texture_image");
+        glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
+        glUniform1i(tex_roda_uniform, 1);
+        glUniform1i(texture_uniform, 1);
         // "Ligamos" o VAO. Informamos que queremos utilizar os atributos de
         // vértices apontados pelo VAO criado pela função BuildTriangles(). Veja
         // comentários detalhados dentro da definição de BuildTriangles().
@@ -592,6 +639,13 @@ int main()
         //
         glm::mat4 model = Matrix_Identity(); // Transformação inicial = identidade.
         // Desenha cubo-pista visto de dentro
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+        glUniform1i(glGetUniformLocation(g_GpuProgramID, "texture_image"), 1);
+
+
+        glActiveTexture(GL_TEXTURE0);
+
         glDisable(GL_CULL_FACE);
 
 
@@ -607,11 +661,16 @@ int main()
             model = model * Matrix_Translate(0.0f, 2.55f, 0.0f); // eleva o Mapa (Cubo)
             model = model * Matrix_Scale(MAP_Width, MAP_Height, MAP_Depth);   // largura, altura, profundidade
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(object_id_uniform, 0);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
             DrawCube(render_as_black_uniform);
         PopMatrix(model);
 
 
         glEnable(GL_CULL_FACE);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
         // Translação inicial do torso
         model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY + 1.0f, g_TorsoPositionZ + 0.0f);
         model = model * Matrix_Rotate_Y(g_CarAngleY);
@@ -650,6 +709,9 @@ int main()
             model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
             model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(object_id_uniform, 1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
             DrawCylinder(g_CylinderMesh, render_as_black_uniform);
         PopMatrix(model);
         PopMatrix(model);
@@ -661,6 +723,9 @@ int main()
             model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
             model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(object_id_uniform, 1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
             DrawCylinder(g_CylinderMesh, render_as_black_uniform);
         PopMatrix(model);
     PopMatrix(model);
@@ -674,6 +739,9 @@ int main()
                 model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
                 model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(object_id_uniform, 1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
                 DrawCylinder(g_CylinderMesh, render_as_black_uniform);
             PopMatrix(model);
             PopMatrix(model);
@@ -686,6 +754,9 @@ int main()
                 model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
                 model = model * Matrix_Rotate_Y(g_WheelAngle); // para animação das rodas girando
                 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(object_id_uniform, 1);
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
                 DrawCylinder(g_CylinderMesh, render_as_black_uniform);
             PopMatrix(model);
             PopMatrix(model);
@@ -710,7 +781,8 @@ int main()
         // "render_as_black" deve ser colocada como "false". Veja o arquivo
         // "shader_vertex.glsl".
         glUniform1i(render_as_black_uniform, false);
-
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
         // Pedimos para a GPU rasterizar os vértices dos eixos XYZ
         // apontados pelo VAO como linhas. Veja a definição de
         // g_VirtualScene["axes"] dentro da função BuildTriangles(), e veja
@@ -726,6 +798,7 @@ int main()
         // "Desligamos" o VAO, evitando assim que operações posteriores venham a
         // alterar o mesmo. Isso evita bugs.
         glBindVertexArray(0);
+        glActiveTexture(GL_TEXTURE0);
 
         // Imprimimos na tela os ângulos de Euler que controlam a rotação do
         // terceiro cubo.
@@ -1005,6 +1078,37 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
     // layout: posição (x, y, z) em location = 0
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+//---FONTE CHATGPT
+std::vector<float> texcoords;
+for (int i = 0; i <= segments; ++i)
+{
+    float u = (float)i / segments;
+    texcoords.push_back(u); texcoords.push_back(1.0f); // topo
+    texcoords.push_back(u); texcoords.push_back(0.0f); // base
+}
+// Centro topo e base
+texcoords.push_back(0.5f); texcoords.push_back(1.0f); // centro topo
+texcoords.push_back(0.5f); texcoords.push_back(0.0f); // centro base
+glBindVertexArray(mesh.VAO); // <--- necessário para vincular corretamente no VAO
+GLuint texcoord_vbo;
+glGenBuffers(1, &texcoord_vbo);
+glBindBuffer(GL_ARRAY_BUFFER, texcoord_vbo);
+glBufferData(GL_ARRAY_BUFFER, texcoords.size() * sizeof(float), texcoords.data(), GL_STATIC_DRAW);
+glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, (void*)0);
+glEnableVertexAttribArray(2);
+// Cores brancas para todos os vértices (RGBA = 1.0)
+std::vector<float> colors(vertices.size() / 3 * 4, 1.0f); // 4 floats por vértice
+
+GLuint color_vbo;
+glGenBuffers(1, &color_vbo);
+glBindBuffer(GL_ARRAY_BUFFER, color_vbo);
+glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+glEnableVertexAttribArray(1);
+glBindVertexArray(0);
+
+//---Fim
+
 
     glBindVertexArray(0);
 
@@ -1257,6 +1361,37 @@ GLuint BuildTriangles()
     //
     // Este vetor "indices" define a TOPOLOGIA (veja slides 103-110 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
     //
+
+    //---FONTE: CHATGPT
+    // Coordenadas de textura UV
+    GLfloat texture_coords[] = {
+        //     U      V
+        0.0f, 1.0f, // 0
+        0.0f, 0.0f, // 1
+        1.0f, 0.0f, // 2
+        1.0f, 1.0f, // 3
+        0.0f, 1.0f, // 4
+        0.0f, 0.0f, // 5
+        1.0f, 0.0f, // 6
+        1.0f, 1.0f, // 7
+        0.0f, 0.0f, // eixo X (ignorado)
+        0.0f, 0.0f,
+        0.0f, 0.0f, // eixo Y
+        0.0f, 0.0f,
+        0.0f, 0.0f, // eixo Z
+        0.0f, 0.0f,
+    };
+
+    GLuint VBO_texture_coords_id;
+    glGenBuffers(1, &VBO_texture_coords_id);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_texture_coords_id);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texture_coords), texture_coords, GL_STATIC_DRAW);
+    location = 2; // location = 2 em shader_vertex.glsl
+    number_of_dimensions = 2; // vec2
+    glVertexAttribPointer(location, number_of_dimensions, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(location);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    //---FIM
     GLuint indices[] = {
     // Definimos os índices dos vértices que definem as FACES de um cubo
     // através de 12 triângulos que serão desenhados com o modo de renderização
