@@ -46,6 +46,8 @@
 #include <vector>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+// Headers da biblioteca para carregar modelos obj
+#include <tiny_obj_loader.h>
 
 
 #include <glm/vec2.hpp>
@@ -55,6 +57,7 @@ void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
 glm::mat4 g_CannonMatrix;
 GLuint g_TextureCubao;
+GLuint g_BunnyTexture;
 GLuint g_TextureRoda;
 
 
@@ -333,6 +336,21 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     stbi_image_free(image);
 
+        unsigned char *image_bunny = stbi_load("../../data/bunny_texture.jpg", &width, &height, &channels, 0);
+    if (!image_bunny) {
+        fprintf(stderr, "Erro ao carregar bunny_texture.png\n");
+        std::exit(EXIT_FAILURE);
+    }
+
+    glGenTextures(1, &g_BunnyTexture);
+    glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, (channels == 4 ? GL_RGBA : GL_RGB), GL_UNSIGNED_BYTE, image_bunny);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(image_bunny);
     g_CylinderMesh = CreateCylinderMesh(1.0f, 1.0f, 32);
 
     unsigned char *image_roda = stbi_load("../../data/roda.png", &width, &height, &channels, 0);
@@ -392,6 +410,79 @@ int main()
     // Inserindo obstáculos no vetor obstacles
     obstacles.push_back(MakeBox(1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f));
 
+// --- Coelho OBJ
+//---FONTE CHATGPT
+tinyobj::attrib_t attrib;
+std::vector<tinyobj::shape_t> shapes;
+std::vector<tinyobj::material_t> materials;
+std::string warn, err;
+GLuint g_BunnyVAO;
+int g_BunnyNumTriangles;
+GLuint g_BunnyTexture;
+float bunny_time = 0.0f;
+std::vector<glm::vec3> bezier_control_points = {
+    glm::vec3(5.0f, 0.0f, 0.0f),
+    glm::vec3(6.0f, 0.0f, -4.0f),
+    glm::vec3(0.0f, 0.0f, -6.0f),
+    glm::vec3(-6.0f, 0.0f, -4.0f),
+    glm::vec3(5.0f, 0.0f, 0.0f)
+};
+
+bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, "../../data/bunny.obj", "../../data/");
+if (!ret) {
+
+        fprintf(stderr, "Erro ao carregar bunny.obj\n");
+    std::exit(1);
+}
+
+std::vector<float> bunny_vertices;
+std::vector<unsigned int> bunny_indices;
+
+for (const auto& shape : shapes) {
+    for (const auto& index : shape.mesh.indices) {
+        bunny_vertices.push_back(attrib.vertices[3 * index.vertex_index + 0]);
+        bunny_vertices.push_back(attrib.vertices[3 * index.vertex_index + 1]);
+        bunny_vertices.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+
+        float u = 0.0f, v = 0.0f;
+        if (index.texcoord_index >= 0) {
+            u = attrib.texcoords[2 * index.texcoord_index + 0];
+            v = attrib.texcoords[2 * index.texcoord_index + 1];
+        }
+        bunny_vertices.push_back(u);
+        bunny_vertices.push_back(v);
+    }
+}
+
+for (int i = 0; i < bunny_vertices.size() / 5; ++i) {
+    bunny_indices.push_back(i);
+}
+
+// Enviar para GPU
+glGenVertexArrays(1, &g_BunnyVAO);
+glBindVertexArray(g_BunnyVAO);
+
+GLuint vbo, ebo;
+glGenBuffers(1, &vbo);
+glGenBuffers(1, &ebo);
+
+glBindBuffer(GL_ARRAY_BUFFER, vbo);
+glBufferData(GL_ARRAY_BUFFER, bunny_vertices.size() * sizeof(float), bunny_vertices.data(), GL_STATIC_DRAW);
+
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+glBufferData(GL_ELEMENT_ARRAY_BUFFER, bunny_indices.size() * sizeof(unsigned int), bunny_indices.data(), GL_STATIC_DRAW);
+
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+glEnableVertexAttribArray(0);
+glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+glEnableVertexAttribArray(2);
+
+glBindVertexArray(0);
+g_BunnyNumTriangles = bunny_indices.size();
+
+//---FIM
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
 
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
@@ -786,6 +877,31 @@ int main()
             PopMatrix(model);
 
         PopMatrix(model);
+        tinyobj::attrib_t attrib;
+
+// [BUNNY TRANSFORM]
+bunny_time += 0.001f;
+if (bunny_time > 1.0f) bunny_time = 0.0f;
+
+// Bézier com 5 pontos
+auto bezier = [](std::vector<glm::vec3> cp, float t) -> glm::vec3 {
+    std::vector<glm::vec3> temp = cp;
+    for (int k = 1; k < cp.size(); ++k)
+        for (int i = 0; i < cp.size() - k; ++i)
+            temp[i] = (1 - t) * temp[i] + t * temp[i + 1];
+    return temp[0];
+};
+
+glm::vec3 bunny_pos = bezier(bezier_control_points, bunny_time);
+glm::mat4 model_bunny = glm::translate(glm::mat4(1.0f), bunny_pos);
+glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_bunny));
+glUniform1i(object_id_uniform, 4); // bunny object id
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
+glBindVertexArray(g_BunnyVAO);
+glDrawElements(GL_TRIANGLES, g_BunnyNumTriangles, GL_UNSIGNED_INT, 0);
+glBindVertexArray(0);
+
 
         // Neste ponto a matriz model recuperada é a matriz inicial (translação do torso)
 
@@ -1897,6 +2013,19 @@ void FramebufferSizeCallback(GLFWwindow* window, int width, int height)
 // de tempo. Utilizadas no callback CursorPosCallback() abaixo.
 double g_LastCursorPosX, g_LastCursorPosY;
 
+
+std::vector<glm::vec3> bezier_control_points = {
+    glm::vec3(5.0f, 0.0f, 0.0f),
+    glm::vec3(6.0f, 0.0f, -4.0f),
+    glm::vec3(0.0f, 0.0f, -6.0f),
+    glm::vec3(-6.0f, 0.0f, -4.0f),
+    glm::vec3(-5.0f, 0.0f, 0.0f)
+};
+
+float bunny_time = 0.0f;
+GLuint g_BunnyVAO;
+int g_BunnyNumTriangles;
+//GLuint g_BunnyTexture;
 // Função callback chamada sempre que o usuário aperta algum dos botões do mouse
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
 {

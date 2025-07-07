@@ -58,6 +58,8 @@ void main()
         tex_color = texture(texture_image, scaled_uv);
     else if (object_id == 1)
         tex_color = texture(texture_roda, scaled_uv); // ou texcoords_frag se preferir
+    else if (object_id == 4)
+        tex_color = texture(texture_image, texcoords_frag);
     else
         tex_color = vec4(1.0);
     vec3 P = position_world.xyz;
