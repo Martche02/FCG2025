@@ -2428,7 +2428,7 @@
 	<stddef.h>
 	<stdint.h>
 
-1751853330 source:c:\users\marce\codes\fcg\fcg2025\src\main.cpp
+1751862173 source:c:\users\marce\codes\fcg\fcg2025\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
@@ -2447,6 +2447,7 @@
 	"matrices.h"
 	<vector>
 	"stb_image.h"
+	<tiny_obj_loader.h>
 
 1750020260 c:\users\marce\codes\fcg\fcg2025\include\glm\gtc\type_ptr.hpp
 	"../gtc/quaternion.hpp"
@@ -2729,4 +2730,25 @@
 	<emmintrin.h>
 	<intrin.h>
 	<arm_neon.h>
+
+1750005165 c:\users\marce\codes\fcg\fcg2025\include\tiny_obj_loader.h
+	<map>
+	<string>
+	<vector>
+	<cassert>
+	<cctype>
+	<cmath>
+	<cstddef>
+	<cstdlib>
+	<cstring>
+	<fstream>
+	<limits>
+	<set>
+	<sstream>
+	<utility>
+	<array>
+	"mapbox/earcut.hpp"
+
+1750005167 source:c:\users\marce\codes\fcg\fcg2025\src\tiny_obj_loader.cpp
+	"tiny_obj_loader.h"
 
