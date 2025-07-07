@@ -137,12 +137,13 @@ struct CollisionSides {
 };
 
 
-struct BoundingBoxObject {
+struct BoundingObject {
     int id;            // ID único do obstáculo
     float x, z;         // Posição no plano XZ
     float angleY;       // Rotação em torno do eixo Y (em radianos)
     float width;        // Largura (em X)
     float length;       // Comprimento (em Z)
+    int type; // 1- Box, 2- Sphere, 3- Triangle
 };
 
 
@@ -152,8 +153,8 @@ Mesh CreateCylinderMesh(float radius, float height, int segments);
 void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform);
 CollisionSides CheckWallCollision(float posX, float posZ, float angleY, float carHalfWidth, float carHalfLength, float mapWidth, float mapDepth);
 CollisionSides CheckBoxCollision(float posA_X, float posA_Z, float angleA, float halfWidthA, float halfLengthA, float posB_X, float posB_Z, float angleB, float widthB, float lengthB);
-CollisionSides CheckAllCollisions(float carX, float carZ, float carAngleY, float carHalfWidth, float carHalfLength, float mapWidth, float mapDepth, const std::vector<BoundingBoxObject>& obstacles);
-
+CollisionSides CheckAllCollisions(float carX, float carZ, float carAngleY, float carHalfWidth, float carHalfLength, float mapWidth, float mapDepth, const std::vector<BoundingObject>& obstacles);
+void FireCannon(float carX, float carZ, float carAngleY);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -175,6 +176,10 @@ float g_AngleY = 0.0f;
 float g_AngleZ = 0.0f;
 
 float g_CarAngleY = 0.0f; // Var para o angulo da direção do carro
+
+// Vars para o disparo do nosso canhão
+float lastShotTime = -100.0f;
+const float shotCooldown = 3.0f;
 
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
@@ -209,7 +214,7 @@ bool g_UseFreeCamera(true);
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
 
-std::vector<BoundingBoxObject> obstacles; //Vetor com os objetos
+std::vector<BoundingObject> obstacles; //Vetor com os objetos
 
 
 
@@ -366,7 +371,7 @@ int main()
 
 
     // Inserindo obstáculos no vetor obstacles
-    obstacles.push_back({1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f});
+    obstacles.push_back({1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f, 1});
 
 
 
@@ -837,6 +842,16 @@ int main()
 
 
 
+void FireCannon(float carX, float carZ, float carAngleY)
+{
+    printf("Bang!\n");
+    printf("Car position: (%.2f, %.2f)\n", carX, carZ);
+
+    float dirX = sin(carAngleY);
+    float dirZ = cos(carAngleY);
+
+    printf("Front direction: (%.2f, %.2f)\n", dirX, dirZ);
+}
 
 
 
@@ -972,7 +987,7 @@ CollisionSides CheckAllCollisions(
     float carX, float carZ, float carAngleY,
     float carHalfWidth, float carHalfLength,
     float mapWidth, float mapDepth,
-    const std::vector<BoundingBoxObject>& obstacles)
+    const std::vector<BoundingObject>& obstacles)
 {
     // 1. Colisão com as paredes
     CollisionSides result = CheckWallCollision(
@@ -1874,44 +1889,21 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
 
 
 
-    if (key == GLFW_KEY_X && action == GLFW_PRESS)
-    {
-        g_AngleX += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-
-    if (key == GLFW_KEY_Y && action == GLFW_PRESS)
-    {
-        g_AngleY += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
-    if (key == GLFW_KEY_Z && action == GLFW_PRESS)
-    {
-        g_AngleZ += (mod & GLFW_MOD_SHIFT) ? -delta : delta;
-    }
 
     // Se o usuário apertar a tecla espaço, resetamos os ângulos de Euler para zero.
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
     {
-        g_AngleX = 0.0f;
-        g_AngleY = 0.0f;
-        g_AngleZ = 0.0f;
-        g_ForearmAngleX = 0.0f;
-        g_ForearmAngleZ = 0.0f;
-        g_TorsoPositionX = 0.0f;
-        g_TorsoPositionY = 0.0f;
-        g_TorsoPositionZ = 0.0f;
+        float currentTime = (float)glfwGetTime();
+
+        if (currentTime - lastShotTime >= shotCooldown)
+        {
+            // IMPORTANTE: use as variáveis globais de posição e rotação do carro
+            FireCannon(g_TorsoPositionX, g_TorsoPositionZ, g_CarAngleY);
+
+            lastShotTime = currentTime;
+        }
     }
 
-    // Se o usuário apertar a tecla P, utilizamos projeção perspectiva.
-    if (key == GLFW_KEY_P && action == GLFW_PRESS)
-    {
-        g_UsePerspectiveProjection = true;
-    }
-
-    // Se o usuário apertar a tecla O, utilizamos projeção ortográfica.
-    if (key == GLFW_KEY_O && action == GLFW_PRESS)
-    {
-        g_UsePerspectiveProjection = false;
-    }
 
     // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.
     if (key == GLFW_KEY_H && action == GLFW_PRESS)
