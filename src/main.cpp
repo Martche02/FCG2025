@@ -131,11 +131,22 @@ struct CollisionSides {
 };
 
 
+struct BoundingBoxObject {
+    int id;            // ID único do obstáculo
+    float x, z;         // Posição no plano XZ
+    float angleY;       // Rotação em torno do eixo Y (em radianos)
+    float width;        // Largura (em X)
+    float length;       // Comprimento (em Z)
+};
+
+
 
 // Funções adicionais Header
 Mesh CreateCylinderMesh(float radius, float height, int segments);
 void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform);
 CollisionSides CheckWallCollision(float posX, float posZ, float angleY, float carHalfWidth, float carHalfLength, float mapWidth, float mapDepth);
+CollisionSides CheckBoxCollision(float posA_X, float posA_Z, float angleA, float halfWidthA, float halfLengthA, float posB_X, float posB_Z, float angleB, float widthB, float lengthB);
+CollisionSides CheckAllCollisions(float carX, float carZ, float carAngleY, float carHalfWidth, float carHalfLength, float mapWidth, float mapDepth, const std::vector<BoundingBoxObject>& obstacles);
 
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
@@ -191,6 +202,10 @@ bool g_UseFreeCamera(true);
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
+
+std::vector<BoundingBoxObject> obstacles; //Vetor com os objetos
+
+
 
 int main()
 {
@@ -306,6 +321,12 @@ int main()
 
     float g_WheelAngle = 0.0f; // rotação as rodas para animar (ou tentar)
 
+
+    // Inserindo obstáculos no vetor obstacles
+    obstacles.push_back({1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f});
+
+
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -362,10 +383,19 @@ int main()
         g_TorsoPositionZ += cos(g_CarAngleY) * car_velocity * deltaTime;
 
 
-        CollisionSides collision = CheckWallCollision(
-                                    g_TorsoPositionX -1.0f, g_TorsoPositionZ, g_CarAngleY,
-                                    CAR_HALF_WIDTH, CAR_HALF_LENGTH,
-                                    MAP_Width, MAP_Depth);
+        float carX = g_TorsoPositionX;
+        float carZ = g_TorsoPositionZ;
+
+
+
+        CollisionSides collision = CheckAllCollisions(
+            carX, carZ, g_CarAngleY,
+            CAR_HALF_WIDTH, CAR_HALF_LENGTH,
+            MAP_Width, MAP_Depth,
+            obstacles);
+
+
+
 
         float rebound_strength = 10.0f * deltaTime; // Força qe o carro volta
 
@@ -565,6 +595,12 @@ int main()
         glDisable(GL_CULL_FACE);
 
 
+        //Desenha obstáculo
+        model = model * Matrix_Translate(4.0f, 1.2f, 5.0f); // Obstáculo exemplo
+            model = model * Matrix_Scale(1.2f, 1.2f, 3.0f);   // largura, altura, profundidade
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            DrawCube(render_as_black_uniform);
+        PopMatrix(model);
 
 
         PushMatrix(model);
@@ -574,9 +610,10 @@ int main()
             DrawCube(render_as_black_uniform);
         PopMatrix(model);
 
+
         glEnable(GL_CULL_FACE);
         // Translação inicial do torso
-        model = model * Matrix_Translate(g_TorsoPositionX - 1.0f, g_TorsoPositionY + 1.0f, g_TorsoPositionZ + 0.0f);
+        model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY + 1.0f, g_TorsoPositionZ + 0.0f);
         model = model * Matrix_Rotate_Y(g_CarAngleY);
         // Guardamos matriz model atual na pilha
         PushMatrix(model);
@@ -727,6 +764,79 @@ int main()
 
 
 
+
+
+
+
+
+CollisionSides CheckBoxCollision(
+    float posA_X, float posA_Z, float angleA, float halfWidthA, float halfLengthA,
+    float posB_X, float posB_Z, float angleB, float widthB, float lengthB)
+{
+    using namespace glm;
+
+    CollisionSides collision;
+
+    // ======= 1. Pontos das faces da Box A =======
+    vec2 forwardA(sin(angleA), cos(angleA));
+    vec2 rightA(forwardA.y, -forwardA.x);
+    vec2 centerA(posA_X, posA_Z);
+
+    vec2 pointFront = centerA + forwardA * halfLengthA;
+    vec2 pointBack  = centerA - forwardA * halfLengthA;
+    vec2 pointRight = centerA + rightA   * halfWidthA;
+    vec2 pointLeft  = centerA - rightA   * halfWidthA;
+
+    // ======= 2. Converter width/length em half-extents para Box B =======
+    float halfWidthB = widthB * 0.5f;
+    float halfLengthB = lengthB * 0.5f;
+
+    // ======= 3. Gera os 4 cantos da Box B em coordenadas locais =======
+    std::vector<vec2> cornersB = {
+        vec2(-halfWidthB, -halfLengthB),
+        vec2(+halfWidthB, -halfLengthB),
+        vec2(+halfWidthB, +halfLengthB),
+        vec2(-halfWidthB, +halfLengthB)
+    };
+
+    // ======= 4. Rotaciona e translada os cantos da Box B =======
+    float cosB = cos(angleB);
+    float sinB = sin(angleB);
+
+    float minX = std::numeric_limits<float>::max();
+    float maxX = std::numeric_limits<float>::lowest();
+    float minZ = std::numeric_limits<float>::max();
+    float maxZ = std::numeric_limits<float>::lowest();
+
+    for (auto& corner : cornersB) {
+        float rotatedX = cosB * corner.x - sinB * corner.y;
+        float rotatedZ = sinB * corner.x + cosB * corner.y;
+
+        float worldX = rotatedX + posB_X;
+        float worldZ = rotatedZ + posB_Z;
+
+        minX = std::min(minX, worldX);
+        maxX = std::max(maxX, worldX);
+        minZ = std::min(minZ, worldZ);
+        maxZ = std::max(maxZ, worldZ);
+    }
+
+    // ======= 5. Verifica se os pontos de A estão dentro da AABB de B =======
+    auto pointInside = [&](vec2 p) -> bool {
+        return (p.x >= minX && p.x <= maxX && p.y >= minZ && p.y <= maxZ);
+    };
+
+    if (pointInside(pointFront))  collision.front = true;
+    if (pointInside(pointBack))   collision.back = true;
+    if (pointInside(pointLeft))   collision.left = true;
+    if (pointInside(pointRight))  collision.right = true;
+
+    return collision;
+}
+
+
+
+
 CollisionSides CheckWallCollision(
     float posX, float posZ, float angleY,
     float carHalfWidth, float carHalfLength,
@@ -784,6 +894,34 @@ CollisionSides CheckWallCollision(
 }
 
 
+
+CollisionSides CheckAllCollisions(
+    float carX, float carZ, float carAngleY,
+    float carHalfWidth, float carHalfLength,
+    float mapWidth, float mapDepth,
+    const std::vector<BoundingBoxObject>& obstacles)
+{
+    // 1. Colisão com as paredes
+    CollisionSides result = CheckWallCollision(
+        carX, carZ, carAngleY,
+        carHalfWidth, carHalfLength,
+        mapWidth, mapDepth);
+
+    // 2. Colisão com cada obstáculo
+    for (const auto& obs : obstacles) {
+        CollisionSides current = CheckBoxCollision(
+            carX, carZ, carAngleY, carHalfWidth, carHalfLength,
+            obs.x, obs.z, obs.angleY, obs.width, obs.length);
+
+        // 3. Combina resultados
+        result.front = result.front || current.front;
+        result.back  = result.back  || current.back;
+        result.left  = result.left  || current.left;
+        result.right = result.right || current.right;
+    }
+
+    return result;
+}
 
 
 
