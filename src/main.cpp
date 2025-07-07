@@ -47,6 +47,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
@@ -124,9 +125,24 @@ InputState g_Input;
 
 
 
+struct CollisionSides {
+    bool left = false;
+    bool right = false;
+    bool front = false;
+    bool back = false;
 
+    bool collided() const {
+        return left || right || front || back;
+    }
+};
+
+
+
+// Funções adicionais Header
 Mesh CreateCylinderMesh(float radius, float height, int segments);
 void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform);
+CollisionSides CheckWallCollision(float posX, float posZ, float angleY, float carHalfWidth, float carHalfLength, float mapWidth, float mapDepth);
+
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -342,7 +358,18 @@ int main()
         float currentTime = glfwGetTime(); // para o delta time visto em aula
         float deltaTime = currentTime - lastTime;
         lastTime = currentTime;
-        g_WheelAngle += car_velocity * deltaTime * 5.0f; // velocidade da roda girando
+        g_WheelAngle += car_velocity * deltaTime * -5.0f; // velocidade da roda girando
+
+
+                // Cube/Map dimensions
+        const float MAP_Width = 20.0f;
+        const float MAP_Height = 3.0f;
+        const float MAP_Depth = 50.0f;
+
+        // Car to Bounding box Limits
+        const float CAR_HALF_WIDTH  = 1.0f; // raio + tolerância
+        const float CAR_HALF_LENGTH = 2.0f;
+
 
 
 
@@ -378,6 +405,42 @@ int main()
         g_TorsoPositionZ += cos(g_CarAngleY) * car_velocity * deltaTime;
 
 
+        CollisionSides collision = CheckWallCollision(
+                                    g_TorsoPositionX -1.0f, g_TorsoPositionZ, g_CarAngleY,
+                                    CAR_HALF_WIDTH, CAR_HALF_LENGTH,
+                                    MAP_Width, MAP_Depth);
+
+        float rebound_strength = 10.0f * deltaTime; // Força qe o carro volta
+
+        glm::vec2 forwardVec(sin(g_CarAngleY), cos(g_CarAngleY));
+        glm::vec2 rightVec(forwardVec.y, -forwardVec.x); // 90 graus à direita
+
+        // Frontal
+        if (collision.front) {
+            g_TorsoPositionX -= forwardVec.x * rebound_strength;
+            g_TorsoPositionZ -= forwardVec.y * rebound_strength;
+            car_velocity = -std::abs(car_velocity) * 0.8f;
+        }
+
+        // Traseira
+        if (collision.back) {
+            g_TorsoPositionX += forwardVec.x * rebound_strength;
+            g_TorsoPositionZ += forwardVec.y * rebound_strength;
+            car_velocity = std::abs(car_velocity) * 0.8f;
+        }
+
+
+        // Lado esquerdo
+        if (collision.left) {
+            g_TorsoPositionX += rightVec.x * rebound_strength;
+            g_TorsoPositionZ += rightVec.y * rebound_strength;
+        }
+
+        // Lado direito
+        if (collision.right) {
+            g_TorsoPositionX -= rightVec.x * rebound_strength;
+            g_TorsoPositionZ -= rightVec.y * rebound_strength;
+        }
 
 
 
@@ -555,9 +618,12 @@ int main()
 
         glDisable(GL_CULL_FACE);
 
+
+
+
         PushMatrix(model);
-            model = model * Matrix_Translate(0.0f, 2.55f, 0.0f); // eleva o cubo
-            model = model * Matrix_Scale(20.0f, 3.0f, 50.0f);   // largura, altura, profundidade
+            model = model * Matrix_Translate(0.0f, 2.55f, 0.0f); // eleva o Mapa (Cubo)
+            model = model * Matrix_Scale(MAP_Width, MAP_Height, MAP_Depth);   // largura, altura, profundidade
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(object_id_uniform, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -734,6 +800,67 @@ int main()
 
 
 
+CollisionSides CheckWallCollision(
+    float posX, float posZ, float angleY,
+    float carHalfWidth, float carHalfLength,
+    float mapWidth, float mapDepth)
+{
+    using namespace glm;
+
+    vec2 forward(sin(angleY), cos(angleY));
+    vec2 rightVec(forward.y, -forward.x);
+    vec2 center(posX, posZ);
+
+    // Posições das 4 faces do carro
+    vec2 front  = center + forward * carHalfLength;
+    vec2 back   = center - forward * carHalfLength;
+    vec2 right  = center + rightVec * carHalfWidth;
+    vec2 left   = center - rightVec * carHalfWidth;
+
+    // Limites do mapa
+    float wallMinX = -mapWidth / 2.0f;
+    float wallMaxX =  mapWidth / 2.0f;
+    float wallMinZ = -mapDepth / 2.0f;
+    float wallMaxZ =  mapDepth / 2.0f;
+
+    CollisionSides collision;
+
+    // A frente do carro passou qualquer limite?
+    if (front.x < wallMinX || front.x > wallMaxX ||
+        front.y < wallMinZ || front.y > wallMaxZ)
+    {
+        collision.front = true;
+    }
+
+    // A traseira do carro passou qualquer limite?
+    if (back.x < wallMinX || back.x > wallMaxX ||
+        back.y < wallMinZ || back.y > wallMaxZ)
+    {
+        collision.back = true;
+    }
+
+    // A lateral direita do carro passou qualquer limite?
+    if (right.x < wallMinX || right.x > wallMaxX ||
+        right.y < wallMinZ || right.y > wallMaxZ)
+    {
+        collision.right = true;
+    }
+
+    // A lateral esquerda do carro passou qualquer limite?
+    if (left.x < wallMinX || left.x > wallMaxX ||
+        left.y < wallMinZ || left.y > wallMaxZ)
+    {
+        collision.left = true;
+    }
+
+    return collision;
+}
+
+
+
+
+
+
 Mesh CreateCylinderMesh(float radius, float height, int segments)
 {
     Mesh mesh;
@@ -759,16 +886,16 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
     vertices.insert(vertices.end(), { 0.0f, +halfHeight, 0.0f }); // centro do topo
     vertices.insert(vertices.end(), { 0.0f, -halfHeight, 0.0f }); // centro da base
 
-    int top_center_index = (segments + 1) * 2;      // índice do centro superior
-    int bottom_center_index = top_center_index + 1; // índice do centro inferior
+    unsigned int top_center_index = (segments + 1) * 2;      // índice do centro superior
+    unsigned int bottom_center_index = top_center_index + 1; // índice do centro inferior
 
     // Triângulos das laterais
     for (int i = 0; i < segments; ++i)
     {
-        int top1 = i * 2;
-        int bot1 = i * 2 + 1;
-        int top2 = (i + 1) * 2;
-        int bot2 = (i + 1) * 2 + 1;
+        unsigned int top1 = i * 2;
+        unsigned int bot1 = i * 2 + 1;
+        unsigned int top2 = (i + 1) * 2;
+        unsigned int bot2 = (i + 1) * 2 + 1;
 
         // Anti-horário
         indices.insert(indices.end(), { top1, top2, bot1 });
@@ -778,8 +905,8 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
     // Triângulos da tampa superior
     for (int i = 0; i < segments; ++i)
     {
-        int top1 = i * 2;
-        int top2 = ((i + 1) % (segments + 1)) * 2;
+        unsigned int top1 = i * 2;
+        unsigned int top2 = ((i + 1) % (segments + 1)) * 2;
 
         indices.insert(indices.end(), {
             top2, top1, top_center_index
@@ -789,8 +916,8 @@ Mesh CreateCylinderMesh(float radius, float height, int segments)
     // Triângulos da tampa inferior
     for (int i = 0; i < segments; ++i)
     {
-        int bot1 = i * 2 + 1;
-        int bot2 = ((i + 1) % (segments + 1)) * 2 + 1;
+        unsigned int bot1 = i * 2 + 1;
+        unsigned int bot2 = ((i + 1) % (segments + 1)) * 2 + 1;
 
         indices.insert(indices.end(), {
             bottom_center_index, bot1, bot2
