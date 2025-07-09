@@ -35,23 +35,22 @@ void main()
         float u, v;
         if (abs_pos.x >= abs_pos.y && abs_pos.x >= abs_pos.z)
         {
-            u = mod(pos.z, 1.0);
-            v = mod(pos.y, 1.0);
+            u = pos.z;
+            v = pos.y;
         }
         else if (abs_pos.y >= abs_pos.x && abs_pos.y >= abs_pos.z)
         {
-            u = mod(pos.x, 1.0);
-            v = mod(pos.z, 1.0);
+            u = pos.x;
+            v = pos.z;
         }
         else
         {
             // Eixo Z dominante → projeção no plano XY
-            u = mod(pos.x, 1.0);
-            v = mod(pos.y, 1.0);
+            u = pos.x;
+            v = pos.y;
         }
 
-        if (u < 0.0) u += 1.0;
-        if (v < 0.0) v += 1.0;
+
         scaled_uv = vec2(u, v);
     }
     else {

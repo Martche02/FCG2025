@@ -863,7 +863,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
 
         glUniform4f(light_pos_uniform, 0.0f, 3.0f, 3.0f, 1.0f);
         glUniform4f(camera_pos_uniform, camera_position_c.x, camera_position_c.y, camera_position_c.z, camera_position_c.w);
-        glUniform3f(Ia_uniform, 0.05f, 0.05f, 0.05f); // Luz ambiente bem fraca
+        glUniform3f(Ia_uniform, 0.1f, 0.1f, 0.1f); // Luz ambiente bem fraca
         glUniform3f(Id_uniform, 0.6f, 0.6f, 0.6f);    // Luz difusa moderada
         glUniform3f(Is_uniform, 0.2f, 0.2f, 0.2f);    // Reflexo especular fraco
         //---FIM
