@@ -50,6 +50,9 @@
 #include <tiny_obj_loader.h>
 
 
+#include <glm/vec2.hpp>
+#include <algorithm>
+
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
@@ -146,7 +149,17 @@ struct BoundingObject {
     float angleY;       // Rotação em torno do eixo Y (em radianos)
     float width;        // Largura (em X)
     float length;       // Comprimento (em Z)
+    float height;       // Altura (Y)
     int type; // 1- Box, 2- Sphere, 3- Triangle
+    float radius = 0.0f; // Para esfera
+    glm::vec2 v0, v1, v2; // coordenadas absolutas dos vértices quando triangulo
+
+    BoundingObject(int id, float x, float z, float angleY, // Construtor
+                   float width, float length, float height, int type, float radius,
+                   glm::vec2 v0, glm::vec2 v1, glm::vec2 v2)
+                    : id(id), x(x), z(z), angleY(angleY),
+                      width(width), length(length), height(height), type(type),
+                      radius(radius), v0(v0), v1(v1), v2(v2) {}
 };
 
 
@@ -158,9 +171,14 @@ CollisionSides CheckWallCollision(float posX, float posZ, float angleY, float ca
 CollisionSides CheckBoxCollision(float posA_X, float posA_Z, float angleA, float halfWidthA, float halfLengthA, float posB_X, float posB_Z, float angleB, float widthB, float lengthB);
 CollisionSides CheckAllCollisions(float carX, float carZ, float carAngleY, float carHalfWidth, float carHalfLength, float mapWidth, float mapDepth, const std::vector<BoundingObject>& obstacles);
 void FireCannon(float carX, float carZ, float carAngleY);
-bool RaySegmentIntersect(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 p1, glm::vec2 p2);
-bool RayHitsBoundingBox(const BoundingObject& obs, glm::vec2 rayOrigin, glm::vec2 rayDir);
+bool RaySegmentIntersect(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 p1, glm::vec2 p2, float& out_t);
+bool RayHitsBoundingBox(const BoundingObject& obs, glm::vec2 rayOrigin, glm::vec2 rayDir, float& out_t);
 float Cross2D(glm::vec2 a, glm::vec2 b);
+bool RayHitsSphere(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 center, float radius, float& out_t);
+bool RayHitsTriangle(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2, float& out_t);
+BoundingObject MakeTriangle(int id, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2);
+BoundingObject MakeSphere(int id, float x, float z, float radius);
+BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length, float height);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -392,7 +410,11 @@ int main()
 
 
     // Inserindo obstáculos no vetor obstacles
-    obstacles.push_back({1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f, 1});
+    obstacles.push_back(MakeBox(1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f, 1.2f));
+    obstacles.push_back(MakeBox(2, 2.5f, 4.0f, 0.2f, 1.0f, 2.0f, 1.0f));
+    obstacles.push_back(MakeBox(3, -3.0f, 4.5f, 0.0f, 1.0f, 1.5f, 1.0f));
+    obstacles.push_back(MakeBox(4, 1.5f, 6.0f, 0.0f, 0.8f, 2.5f, 0.8f));
+    obstacles.push_back(MakeBox(5, -2.0f, -3.0f, 0.3f, 1.0f, 1.8f, 1.0f));
 
 // --- Coelho OBJ
 //---FONTE CHATGPT
@@ -748,13 +770,20 @@ glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
         glDisable(GL_CULL_FACE);
 
 
-        //Desenha obstáculo
-        model = model * Matrix_Translate(4.0f, 1.2f, 5.0f); // Obstáculo exemplo
-            model = model * Matrix_Scale(1.2f, 1.2f, 3.0f);   // largura, altura, profundidade
-            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-            DrawCube(render_as_black_uniform);
-        PopMatrix(model);
 
+        for (const auto& obj : obstacles) // Desenha todos os obstaculos que são do tipo Box
+            {
+                if (obj.type == 1)
+                {
+                    PushMatrix(model);
+                        model = model * Matrix_Translate(obj.x, obj.height, obj.z);
+                        model = model * Matrix_Scale(obj.width, obj.height, obj.length);
+                        model = model * Matrix_Rotate_Y(obj.angleY); // caso tenha rotação
+                        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                        DrawCube(render_as_black_uniform);
+                    PopMatrix(model);
+                }
+            }
 
         PushMatrix(model);
             model = model * Matrix_Translate(0.0f, 2.55f, 0.0f); // eleva o Mapa (Cubo)
@@ -960,7 +989,6 @@ glBindVertexArray(0);
 
 
 
-
 void FireCannon(float carX, float carZ, float carAngleY)
 {
     printf("Bang!\n");
@@ -971,21 +999,43 @@ void FireCannon(float carX, float carZ, float carAngleY)
 
     printf("Front direction: (%.2f, %.2f)\n", rayDir.x, rayDir.y);
 
+    int closestIndex = -1;
+    float closestT = std::numeric_limits<float>::max();
+
     for (size_t i = 0; i < obstacles.size(); ++i)
     {
-        const auto& obs = obstacles[i];
+        const auto& obj = obstacles[i];
+        float t = -1.0f;
 
-        if (obs.type != 1)
-            continue; // ignora objetos que não são caixas
-
-        if (RayHitsBoundingBox(obs, rayOrigin, rayDir))
-        {
-            printf("ATINGIU!! (ID %d)\n", obs.id);
-            obstacles.erase(obstacles.begin() + i);
-            break;
+        if (obj.type == 1) {
+            if (RayHitsBoundingBox(obj, rayOrigin, rayDir, t) && t < closestT) {
+                closestT = t;
+                closestIndex = i;
+            }
+        }
+        else if (obj.type == 2) {
+            glm::vec2 center(obj.x, obj.z);
+            if (RayHitsSphere(rayOrigin, rayDir, center, obj.radius, t) && t < closestT) {
+                closestT = t;
+                closestIndex = i;
+            }
+        }
+        else if (obj.type == 3) {
+            if (RayHitsTriangle(rayOrigin, rayDir, obj.v0, obj.v1, obj.v2, t) && t < closestT) {
+                closestT = t;
+                closestIndex = i;
+            }
         }
     }
+
+    if (closestIndex != -1)
+    {
+        printf("ATINGIU!! (ID %d, TYPE %d)\n", obstacles[closestIndex].id, obstacles[closestIndex].type);
+        obstacles.erase(obstacles.begin() + closestIndex);
+    }
 }
+
+
 
 
 
@@ -994,57 +1044,123 @@ float Cross2D(glm::vec2 a, glm::vec2 b) {
 }
 
 
-bool RaySegmentIntersect(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 p1, glm::vec2 p2)
+bool RaySegmentIntersect(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 p1, glm::vec2 p2, float& out_t)
 {
     glm::vec2 v1 = rayOrigin - p1;
     glm::vec2 v2 = p2 - p1;
-    glm::vec2 v3(-rayDir.y, rayDir.x); // perpendicular à direção do raio
+    glm::vec2 v3(-rayDir.y, rayDir.x); // perpendicular
 
     float dot = glm::dot(v2, v3);
-    if (fabs(dot) < 1e-6) return false; // paralelo
+    if (fabs(dot) < 1e-6f) return false;
 
     float t1 = Cross2D(v2, v1) / dot;
     float t2 = glm::dot(v1, v3) / dot;
 
-    return (t1 >= 0.0f && t2 >= 0.0f && t2 <= 1.0f);
+    if (t1 >= 0.0f && t2 >= 0.0f && t2 <= 1.0f)
+    {
+        out_t = t1;
+        return true;
+    }
+
+    return false;
 }
 
-bool RayHitsBoundingBox(const BoundingObject& obs, glm::vec2 rayOrigin, glm::vec2 rayDir)
+
+bool RayHitsBoundingBox(const BoundingObject& obs, glm::vec2 rayOrigin, glm::vec2 rayDir, float& out_t)
 {
     float halfW = obs.width * 0.5f;
     float halfL = obs.length * 0.5f;
     float cosA = cos(obs.angleY);
     float sinA = sin(obs.angleY);
 
-    // Canto local -> canto mundo
     auto LocalToWorld = [&](float lx, float lz) -> glm::vec2 {
         float x = cosA * lx - sinA * lz + obs.x;
         float z = sinA * lx + cosA * lz + obs.z;
         return glm::vec2(x, z);
     };
 
-    // Definir os 4 cantos da bounding box
-    glm::vec2 bl = LocalToWorld(-halfW, -halfL); // bottom-left
-    glm::vec2 br = LocalToWorld( halfW, -halfL); // bottom-right
-    glm::vec2 tr = LocalToWorld( halfW,  halfL); // top-right
-    glm::vec2 tl = LocalToWorld(-halfW,  halfL); // top-left
+    glm::vec2 bl = LocalToWorld(-halfW, -halfL);
+    glm::vec2 br = LocalToWorld( halfW, -halfL);
+    glm::vec2 tr = LocalToWorld( halfW,  halfL);
+    glm::vec2 tl = LocalToWorld(-halfW,  halfL);
 
-    // Lados a testar (em XZ): esquerda, direita, frente, trás
     std::vector<std::pair<glm::vec2, glm::vec2>> edges = {
-        {bl, br}, // parte de trás
-        {br, tr}, // direita
-        {tr, tl}, // frente
-        {tl, bl}  // esquerda
+        {bl, br},
+        {br, tr},
+        {tr, tl},
+        {tl, bl}
     };
 
+    bool hit = false;
+    float minT = std::numeric_limits<float>::max();
+
     for (const auto& edge : edges) {
-        if (RaySegmentIntersect(rayOrigin, rayDir, edge.first, edge.second)) {
-            return true;
+        float t;
+        if (RaySegmentIntersect(rayOrigin, rayDir, edge.first, edge.second, t)) {
+            if (t < minT) {
+                minT = t;
+                hit = true;
+            }
         }
+    }
+
+    if (hit)
+        out_t = minT;
+
+    return hit;
+}
+
+
+bool RayHitsSphere(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 center, float radius, float& out_t)
+{
+    glm::vec2 L = center - rayOrigin;
+
+    float a = glm::dot(rayDir, rayDir);
+    float b = 2.0f * glm::dot(rayDir, L);
+    float c = glm::dot(L, L) - radius * radius;
+
+    float discriminant = b * b - 4.0f * a * c;
+
+    if (discriminant < 0.0f)
+        return false;
+
+    float t = (-b - sqrt(discriminant)) / (2.0f * a);
+    if (t >= 0.0f) {
+        out_t = t;
+        return true;
     }
 
     return false;
 }
+
+
+
+bool RayHitsTriangle(glm::vec2 rayOrigin, glm::vec2 rayDir,
+                     glm::vec2 v0, glm::vec2 v1, glm::vec2 v2, float& out_t)
+{
+    glm::vec2 edge1 = v1 - v0;
+    glm::vec2 edge2 = v2 - v0;
+
+    glm::vec2 normal(-rayDir.y, rayDir.x); // perpendicular
+
+    float det = glm::dot(edge1, normal);
+    if (fabs(det) < 1e-6f) return false;
+
+    float u = glm::dot(rayOrigin - v0, normal) / det;
+    if (u < 0.0f || u > 1.0f) return false;
+
+    glm::vec2 q = rayOrigin - v0 - u * edge1;
+    float v = glm::dot(rayDir, q) / glm::dot(edge2, rayDir);
+
+    if (v >= 0.0f && u + v <= 1.0f)
+    {
+        out_t = glm::length(rayDir) * u; // aproximação simples da distância
+        return true;
+    }
+
+    return false;
+}
+
 
 
 CollisionSides CheckBoxCollision(
@@ -1055,7 +1171,7 @@ CollisionSides CheckBoxCollision(
 
     CollisionSides collision;
 
-    // ======= 1. Pontos das faces da Box A =======
+    // faces Box A
     vec2 forwardA(sin(angleA), cos(angleA));
     vec2 rightA(forwardA.y, -forwardA.x);
     vec2 centerA(posA_X, posA_Z);
@@ -1065,11 +1181,11 @@ CollisionSides CheckBoxCollision(
     vec2 pointRight = centerA + rightA   * halfWidthA;
     vec2 pointLeft  = centerA - rightA   * halfWidthA;
 
-    // ======= 2. Converter width/length em half-extents para Box B =======
+    // width/length em half Box B
     float halfWidthB = widthB * 0.5f;
     float halfLengthB = lengthB * 0.5f;
 
-    // ======= 3. Gera os 4 cantos da Box B em coordenadas locais =======
+    // 4 cantos da Box B em coordenadas locais
     std::vector<vec2> cornersB = {
         vec2(-halfWidthB, -halfLengthB),
         vec2(+halfWidthB, -halfLengthB),
@@ -1077,7 +1193,7 @@ CollisionSides CheckBoxCollision(
         vec2(-halfWidthB, +halfLengthB)
     };
 
-    // ======= 4. Rotaciona e translada os cantos da Box B =======
+    // Rotaciona/translada os cantos Box B
     float cosB = cos(angleB);
     float sinB = sin(angleB);
 
@@ -1099,7 +1215,7 @@ CollisionSides CheckBoxCollision(
         maxZ = std::max(maxZ, worldZ);
     }
 
-    // ======= 5. Verifica se os pontos de A estão dentro da AABB de B =======
+    // Verifica se os pontos de A estão dentro da AABB de B
     auto pointInside = [&](vec2 p) -> bool {
         return (p.x >= minX && p.x <= maxX && p.y >= minZ && p.y <= maxZ);
     };
@@ -1201,7 +1317,48 @@ CollisionSides CheckAllCollisions(
     return result;
 }
 
+BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length, float height)
+{
+    return BoundingObject(
+        id,
+        x, z,
+        angleY,
+        width, length, height,
+        1,                 // type = 1 (Box)
+        0.0f,              // radius (não usado)
+        glm::vec2(0.0f),   // v0
+        glm::vec2(0.0f),   // v1
+        glm::vec2(0.0f)    // v2
+    );
+}
 
+BoundingObject MakeSphere(int id, float x, float z, float radius)
+{
+    return BoundingObject(
+        id,
+        x, z,
+        0.0f,              // angleY (não usado para esfera)
+        0.0f, 0.0f, 0.0f,        // width, length, height (não usados)
+        2,                 // type = 2 (Sphere)
+        radius,            // radius usado
+        glm::vec2(0.0f),   // v0
+        glm::vec2(0.0f),   // v1
+        glm::vec2(0.0f)    // v2
+    );
+}
+
+BoundingObject MakeTriangle(int id, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2)
+{
+    return BoundingObject(
+        id,
+        0.0f, 0.0f,        // x, z (opcional para triângulo)
+        0.0f,              // angleY
+        0.0f, 0.0f, 0.0f,        // width, length
+        3,                 // type = 3 (Triangle)
+        0.0f,              // radius (não usado)
+        v0, v1, v2
+    );
+}
 
 
 Mesh CreateCylinderMesh(float radius, float height, int segments)
@@ -2112,6 +2269,11 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     if (key == GLFW_KEY_H && action == GLFW_PRESS)
     {
         g_ShowInfoText = !g_ShowInfoText;
+    }
+
+    if (key == GLFW_KEY_T && action == GLFW_PRESS)
+    {
+        g_UseFreeCamera = !g_UseFreeCamera;
     }
 }
 
