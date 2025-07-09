@@ -57,19 +57,17 @@ void main()
     else {
         scaled_uv = texcoords_frag;
     }
-    if (object_id == 0)
+    if (object_id == 0 || object_id == 2 || object_id == 4)
         tex_color = texture(texture_image, scaled_uv);
     else if (object_id == 1)
         tex_color = texture(texture_roda, scaled_uv);
     else if (object_id == 3)
         tex_color = texture(texture_bunny, scaled_uv);
-    else if (object_id == 4)
-        tex_color = texture(texture_image, scaled_uv);
-    else if (object_id == 999){
-         color.rgb = vec3(1.0); // branco puro
-         color.a = 1.0;
-         return;
-         }
+    else if (object_id == 999) {
+        color.rgb = vec3(1.0);
+        color.a = 1.0;
+        return;
+    }
     else
         tex_color = vec4(1.0);
     vec3 P = position_world.xyz;

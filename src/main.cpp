@@ -120,6 +120,7 @@ struct Mesh //Para desenho dos cilindros
     int num_indices;
 };
 Mesh g_CylinderMesh;
+Mesh g_SphereMesh;
 
 struct InputState
 {
@@ -180,6 +181,8 @@ bool RayHitsTriangle(glm::vec2 rayOrigin, glm::vec2 rayDir, glm::vec2 v0, glm::v
 BoundingObject MakeTriangle(int id, glm::vec2 v0, glm::vec2 v1, glm::vec2 v2);
 BoundingObject MakeSphere(int id, float x, float z, float radius);
 BoundingObject MakeBox(int id, float x, float z, float angleY, float width, float length, float height);
+Mesh CreateSphereMesh(float radius, int latitudeBands, int longitudeBands);
+void DrawSphere(Mesh& mesh, GLint render_as_black_uniform);
 
 // Abaixo definimos variáveis globais utilizadas em várias funções do código.
 
@@ -204,7 +207,7 @@ float g_CarAngleY = 0.0f; // Var para o angulo da direção do carro
 
 // Vars para o disparo do nosso canhão
 float lastShotTime = -100.0f;
-const float shotCooldown = 3.0f;
+const float shotCooldown = 5.0f;
 
 // "g_LeftMouseButtonPressed = true" se o usuário está com o botão esquerdo do mouse
 // pressionado no momento atual. Veja função MouseButtonCallback().
@@ -361,6 +364,7 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     stbi_image_free(image_bunny);
     g_CylinderMesh = CreateCylinderMesh(1.0f, 1.0f, 32);
+    g_SphereMesh = CreateSphereMesh(1.0f, 20, 20); // raio 1.0, 20 segmentos
 
     unsigned char *image_roda = stbi_load("../../data/bunny_texture.jpg", &width, &height, &channels, 0);
     if (!image_roda) {
@@ -418,11 +422,88 @@ int main()
 
 
     // Inserindo obstáculos no vetor obstacles
-    obstacles.push_back(MakeBox(1, 0.0f, 0.0f, 0.0f, 2.0f, 1.0f, 1.5f));
-    obstacles.push_back(MakeBox(2, 2.5f, 4.0f, 0.2f, 1.0f, 2.0f, 1.0f));
-    obstacles.push_back(MakeBox(3, -3.0f, 4.5f, 0.0f, 1.0f, 1.5f, 1.0f));
-    obstacles.push_back(MakeBox(4, 1.5f, 6.0f, 0.0f, 0.8f, 2.5f, 0.8f));
-    obstacles.push_back(MakeBox(5, -2.0f, -3.0f, 0.3f, 1.0f, 1.8f, 1.0f));
+    obstacles.push_back(MakeBox(1, 0.0f, 0.0f, 0.0f, 5.0f, 4.0f, 1.5f)); // Id, posx, posz, rot, largura, prof, altura
+
+
+    // Z = -50 → CENTRAL BLOQUEIA LADO DIREITO
+    obstacles.push_back(MakeBox(200, 4.75f, -50.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+
+    // Z = -40 → LATERAIS
+    obstacles.push_back(MakeBox(201, -8.0f, -40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(202, 8.0f, -40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+
+    // Z = -30 → CENTRAL BLOQUEIA LADO ESQUERDO
+    obstacles.push_back(MakeBox(203, -4.75f, -30.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+
+    // Z = -20 → LATERAL ESQUERDA
+    obstacles.push_back(MakeBox(204, -8.5f, -20.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+
+    // Z = -10 → CENTRAL BLOQUEIA LADO DIREITO
+    obstacles.push_back(MakeBox(205, 4.75f, -10.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+
+    // Z = 0 → LATERAIS
+    obstacles.push_back(MakeBox(206, -7.5f, 0.0f, 0.0f, 4.0f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(207, 7.5f, 0.0f, 0.0f, 4.0f, 1.0f, 5.0f));
+
+    // Z = 10 → ÚNICA CENTRAL NORMAL
+    obstacles.push_back(MakeBox(208, 0.0f, 10.0f, 0.0f, 15.0f, 1.0f, 3.0f));
+
+    // Z = 20 → LATERAL DIREITA
+    obstacles.push_back(MakeBox(209, 8.0f, 20.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+
+    // Z = 30 → CENTRAL BLOQUEIA LADO ESQUERDO
+    obstacles.push_back(MakeBox(210, -4.75f, 30.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+
+    // Z = 40 → LATERAIS
+    obstacles.push_back(MakeBox(211, -8.0f, 40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(212, 8.0f, 40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+
+    // Z = 50 → CENTRAL BLOQUEIA LADO DIREITO
+    obstacles.push_back(MakeBox(213, 4.75f, 50.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+
+    // Z = 60 → LATERAL ESQUERDA
+    obstacles.push_back(MakeBox(214, -8.5f, 60.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+
+
+
+
+    //OBSTACULOS SOLTOS
+    // Região: Z = -48 a -42
+    obstacles.push_back(MakeBox(400, -6.0f, -48.0f, 0.0f, 2.5f, 1.0f, 2.0f));
+    obstacles.push_back(MakeBox(401, 6.5f, -44.5f, 0.1f, 3.5f, 1.0f, 2.0f));
+
+    // Região: Z = -38 a -30
+    obstacles.push_back(MakeBox(402, -5.0f, -38.0f, 0.2f, 3.5f, 1.0f, 2.2f));
+    obstacles.push_back(MakeBox(403, 4.5f, -35.0f, -0.1f, 2.5f, 1.0f, 2.0f));
+    obstacles.push_back(MakeBox(404, 0.0f, -32.0f, 0.0f, 4.0f, 1.0f, 2.0f));
+
+    // Região: Z = -25 a -15
+    obstacles.push_back(MakeBox(405, -6.5f, -25.0f, 0.1f, 3.0f, 1.0f, 2.5f));
+    obstacles.push_back(MakeBox(406, 6.5f, -22.0f, -0.1f, 3.5f, 1.0f, 2.2f));
+    obstacles.push_back(MakeBox(407, -2.5f, -18.0f, 0.0f, 4.0f, 1.0f, 2.0f));
+
+    // Região: Z = -8 a 2
+    obstacles.push_back(MakeBox(408, 0.0f, -8.0f, 0.1f, 4.5f, 1.0f, 2.0f));
+    obstacles.push_back(MakeBox(409, -7.5f, -2.0f, 0.0f, 2.0f, 1.0f, 2.0f));
+
+    // Região: Z = 6 a 18
+    obstacles.push_back(MakeBox(410, 6.5f, 6.0f, 0.0f, 3.5f, 1.0f, 2.3f));
+    obstacles.push_back(MakeBox(411, -4.5f, 11.0f, -0.2f, 2.5f, 1.0f, 2.0f));
+    obstacles.push_back(MakeBox(412, 2.0f, 17.0f, 0.1f, 5.0f, 1.0f, 2.5f));
+
+    // Região: Z = 24 a 38
+    obstacles.push_back(MakeBox(413, -7.0f, 24.0f, 0.0f, 2.8f, 1.0f, 2.0f));
+    obstacles.push_back(MakeBox(414, 6.0f, 29.0f, 0.2f, 3.5f, 1.0f, 2.2f));
+    obstacles.push_back(MakeBox(415, 0.0f, 35.5f, 0.0f, 4.0f, 1.0f, 2.0f));
+
+    // Região: Z = 42 a 58
+    obstacles.push_back(MakeBox(416, -6.5f, 42.0f, -0.1f, 3.5f, 1.0f, 2.2f));
+    obstacles.push_back(MakeBox(417, 5.0f, 46.0f, 0.0f, 2.5f, 1.0f, 2.0f));
+    obstacles.push_back(MakeBox(418, 0.0f, 52.0f, 0.1f, 4.0f, 1.0f, 2.3f));
+    obstacles.push_back(MakeBox(419, -3.5f, 58.0f, -0.2f, 3.0f, 1.0f, 2.0f));
+
+
+    obstacles.push_back(MakeSphere(6, 0.0f, -30.0f, 1.5f)); // id, x, z, raio
 
 // --- Coelho OBJ
 //---FONTE CHATGPT
@@ -739,7 +820,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
         // Note que, no sistema de coordenadas da câmera, os planos near e far
         // estão no sentido negativo! Veja slides 176-204 do documento Aula_09_Projecoes.pdf.
         float nearplane = -0.1f;  // Posição do "near plane"
-        float farplane  = -100.0f; // Posição do "far plane"
+        float farplane  = -150.0f; // Posição do "far plane"
 
         float field_of_view = 3.141592 / 3.0f;
         projection = Matrix_Perspective(field_of_view, g_ScreenRatio, nearplane, farplane);
@@ -775,19 +856,44 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
 
 
 
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, g_TextureCubao); // mesma textura usada nos cubos
+        glUniform1i(tex_image_uniform, 0);            // slot de textura
         for (const auto& obj : obstacles) // Desenha todos os obstaculos que são do tipo Box
             {
                 if (obj.type == 1)
                 {
                     PushMatrix(model);
-                        model = model * Matrix_Translate(obj.x, obj.height, obj.z);
+                        model = model * Matrix_Translate(obj.x, obj.height-0.5f, obj.z);
                         model = model * Matrix_Scale(obj.width, obj.height, obj.length);
                         model = model * Matrix_Rotate_Y(obj.angleY); // caso tenha rotação
                         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
                         DrawCube(render_as_black_uniform);
                     PopMatrix(model);
                 }
+                else if (obj.type == 2)
+                {
+                    PushMatrix(model);
+                        model = model * Matrix_Translate(obj.x, obj.height, obj.z);
+                        model = model * Matrix_Scale(obj.radius, obj.radius, obj.radius);
+                        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+
+
+                        glUniform1i(object_id_uniform, 2);
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+                        glUniform1i(tex_image_uniform, 0);
+
+                        //DrawSphere(g_SphereMesh, render_as_black_uniform);
+                    PopMatrix(model);
+                }
             }
+
+
+
+
+
 
         PushMatrix(model);
             model = model * Matrix_Translate(0.0f, 0.8f, MAP_Depth/2.0f - limiar_vitoria); // eleva faixa de vitória
@@ -799,6 +905,15 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             DrawCube(render_as_black_uniform);
         PopMatrix(model);
 
+
+
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+        glUniform1i(tex_image_uniform, 0);
+        glUniform1i(object_id_uniform, 0);
+        DrawCube(render_as_black_uniform);
+
         PushMatrix(model);
             model = model * Matrix_Translate(0.0f, MAP_Height - 0.5f, 0.0f); // eleva o Mapa (Cubo)
             model = model * Matrix_Scale(MAP_Width, MAP_Height, MAP_Depth);   // largura, altura, profundidade
@@ -806,6 +921,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             glUniform1i(object_id_uniform, 0);
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+
             DrawCube(render_as_black_uniform);
         PopMatrix(model);
 
@@ -816,6 +932,14 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
         glEnable(GL_CULL_FACE);
 
         glBindTexture(GL_TEXTURE_2D, 0);
+
+
+
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+        glUniform1i(tex_image_uniform, 0);
+
         // Translação inicial do torso
         model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY + 1.0f, g_TorsoPositionZ + 0.0f);
         model = model * Matrix_Rotate_Y(g_CarAngleY);
@@ -831,6 +955,14 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             // Shader definido no arquivo "shader_vertex.glsl", e o mesmo irá
             // utilizar as matrizes "model", "view" e "projection" definidas
             // acima e já enviadas para a placa de vídeo (GPU).
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+            glUniform1i(tex_image_uniform, 0);
+            glUniform1i(object_id_uniform, 0);
+            DrawCube(render_as_black_uniform);
+
+
             DrawCube(render_as_black_uniform); // Draw TORSO
         // Tiramos da pilha a matriz model guardada anteriormente
         PopMatrix(model);
@@ -844,6 +976,9 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             g_CannonMatrix = model;
             model = model * Matrix_Scale(0.1f, 0.1f, 1.5f); // Escala do canhão
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+            glUniform1i(tex_image_uniform, 0);
             DrawCube(render_as_black_uniform); // Draw Canhão
         PopMatrix(model);
 
@@ -939,7 +1074,7 @@ for (auto& obs : obstacles)
 
 
 
-glm::vec3 bunny_pos = glm::vec3(-8.0f, 1.0f, 73.0f);
+glm::vec3 bunny_pos = glm::vec3(-7.0f, 1.0f, 73.0f);
 glm::mat4 model_bunny = glm::translate(glm::mat4(1.0f), bunny_pos);
 model_bunny = model_bunny * Matrix_Rotate_Y(glm::pi<float>());
 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_bunny));
@@ -950,7 +1085,7 @@ glBindVertexArray(g_BunnyVAO);
 glDrawElements(GL_TRIANGLES, g_BunnyNumTriangles, GL_UNSIGNED_INT, 0);
 glBindVertexArray(0);
 
-bunny_pos = glm::vec3(8.0f, 1.0f, 73.0f);
+bunny_pos = glm::vec3(7.0f, 1.0f, 73.0f);
 model_bunny = glm::translate(glm::mat4(1.0f), bunny_pos);
 model_bunny = model_bunny * Matrix_Rotate_Y(glm::pi<float>());
 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_bunny));
@@ -1527,9 +1662,116 @@ glBindVertexArray(0);
     mesh.num_indices = indices.size();
     return mesh;
 }
- // Função criada com auxilio de IA
+ // Função criada com auxilio de IA: FONTE GPT
 
 void DrawCylinder(Mesh& mesh, GLint render_as_black_uniform)
+{
+    glUniform1i(render_as_black_uniform, GL_FALSE);
+    glBindVertexArray(mesh.VAO);
+    glDrawElements(GL_TRIANGLES, mesh.num_indices, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+Mesh CreateSphereMesh(float radius, int latitudeBands, int longitudeBands)
+{
+    Mesh mesh;
+    std::vector<float> vertex_data;
+    std::vector<unsigned int> indices;
+    std::vector<float> colors;
+
+    for (int lat = 0; lat <= latitudeBands; ++lat)
+    {
+        float theta = lat * M_PI / latitudeBands;
+        float sinTheta = sin(theta);
+        float cosTheta = cos(theta);
+
+        for (int lon = 0; lon <= longitudeBands; ++lon)
+        {
+            float phi = lon * 2.0f * M_PI / longitudeBands;
+            float sinPhi = sin(phi);
+            float cosPhi = cos(phi);
+
+            float x = cosPhi * sinTheta;
+            float y = cosTheta;
+            float z = sinPhi * sinTheta;
+
+            float u = (float)lon / longitudeBands;
+            float v = (float)lat / latitudeBands;
+
+            // posição (3)
+            vertex_data.push_back(radius * x);
+            vertex_data.push_back(radius * y);
+            vertex_data.push_back(radius * z);
+
+            // cor branca (4)
+            vertex_data.push_back(1.0f);
+            vertex_data.push_back(1.0f);
+            vertex_data.push_back(1.0f);
+            vertex_data.push_back(1.0f);
+
+            // texcoord (2)
+            vertex_data.push_back(u);
+            vertex_data.push_back(v);
+        }
+    }
+
+    for (int lat = 0; lat < latitudeBands; ++lat)
+    {
+        for (int lon = 0; lon < longitudeBands; ++lon)
+        {
+            int first = lat * (longitudeBands + 1) + lon;
+            int second = first + longitudeBands + 1;
+
+            indices.push_back(first);
+            indices.push_back(second);
+            indices.push_back(first + 1);
+
+            indices.push_back(second);
+            indices.push_back(second + 1);
+            indices.push_back(first + 1);
+        }
+    }
+
+    glGenVertexArrays(1, &mesh.VAO);
+    glBindVertexArray(mesh.VAO);
+
+    colors.resize((vertex_data.size() / 9) * 4, 1.0f); // RGBA = 1.0
+    GLuint color_vbo;
+    glGenBuffers(1, &color_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, color_vbo);
+    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(float), colors.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, (void*)0);
+    glEnableVertexAttribArray(1);
+
+    GLuint VBO, EBO;
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, vertex_data.size() * sizeof(float), vertex_data.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+    // posição (location = 0)
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(0));
+    glEnableVertexAttribArray(0);
+
+    // cor (location = 1)
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // texcoord (location = 2)
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(7 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+    glBindVertexArray(0);
+
+    mesh.num_indices = indices.size();
+    return mesh;
+} // FONTE GPT : Não está sendo usada por problemas no render, quando chamo drawSphere tudo que vem depois é renderizado em branco
+
+void DrawSphere(Mesh& mesh, GLint render_as_black_uniform)
 {
     glUniform1i(render_as_black_uniform, GL_FALSE);
     glBindVertexArray(mesh.VAO);
