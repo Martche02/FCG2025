@@ -66,6 +66,10 @@ glm::mat4 g_CannonMatrix;
 GLuint g_TextureCubao;
 GLuint g_BunnyTexture;
 GLuint g_TextureRoda;
+GLuint g_TextureCar;
+GLuint g_TextureWalls;
+GLuint g_TextureObstacles;
+
 
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
@@ -366,7 +370,7 @@ int main()
     g_CylinderMesh = CreateCylinderMesh(1.0f, 1.0f, 32);
     g_SphereMesh = CreateSphereMesh(1.0f, 20, 20); // raio 1.0, 20 segmentos
 
-    unsigned char *image_roda = stbi_load("../../data/bunny_texture.jpg", &width, &height, &channels, 0);
+    unsigned char *image_roda = stbi_load("../../data/WheelsTexture.jpg", &width, &height, &channels, 0);
     if (!image_roda) {
         fprintf(stderr, "Erro ao carregar textura roda.png\n");
         std::exit(EXIT_FAILURE);
@@ -381,6 +385,59 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     stbi_image_free(image_roda);
+
+    unsigned char *image_car = stbi_load("../../data/CarTexture.jpg", &width, &height, &channels, 0);
+    if (!image_car) {
+        fprintf(stderr, "Erro ao carregar CarTexture.png\n");
+        std::exit(EXIT_FAILURE);
+    }
+    glGenTextures(1, &g_TextureCar);
+    glBindTexture(GL_TEXTURE_2D, g_TextureCar);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, (channels == 4 ? GL_RGBA : GL_RGB), GL_UNSIGNED_BYTE, image_car);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(image_car);
+
+
+    unsigned char *image_walls = stbi_load("../../data/WallsTexture.jpg", &width, &height, &channels, 0);
+    if (!image_walls) {
+        fprintf(stderr, "Erro ao carregar WallsTexture.png\n");
+        std::exit(EXIT_FAILURE);
+    }
+    glGenTextures(1, &g_TextureWalls);
+    glBindTexture(GL_TEXTURE_2D, g_TextureWalls);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, (channels == 4 ? GL_RGBA : GL_RGB), GL_UNSIGNED_BYTE, image_walls);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(image_walls);
+
+
+    unsigned char *image_obs = stbi_load("../../data/ObstaclesTexture.jpg", &width, &height, &channels, 0);
+    if (!image_obs) {
+        fprintf(stderr, "Erro ao carregar ObstaclesTexture.png\n");
+        std::exit(EXIT_FAILURE);
+    }
+    glGenTextures(1, &g_TextureObstacles);
+    glBindTexture(GL_TEXTURE_2D, g_TextureObstacles);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, (channels == 4 ? GL_RGBA : GL_RGB), GL_UNSIGNED_BYTE, image_obs);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    stbi_image_free(image_obs);
+
+
+
+
+
+
 
     // Buscamos o endereço das variáveis definidas dentro do Vertex Shader.
     // Utilizaremos estas variáveis para enviar dados para a placa de vídeo
@@ -806,9 +863,9 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
 
         glUniform4f(light_pos_uniform, 0.0f, 3.0f, 3.0f, 1.0f);
         glUniform4f(camera_pos_uniform, camera_position_c.x, camera_position_c.y, camera_position_c.z, camera_position_c.w);
-        glUniform3f(Ia_uniform, 0.2f, 0.2f, 0.2f);
-        glUniform3f(Id_uniform, 1.0f, 1.0f, 1.0f);
-        glUniform3f(Is_uniform, 1.0f, 1.0f, 1.0f);
+        glUniform3f(Ia_uniform, 0.05f, 0.05f, 0.05f); // Luz ambiente bem fraca
+        glUniform3f(Id_uniform, 0.6f, 0.6f, 0.6f);    // Luz difusa moderada
+        glUniform3f(Is_uniform, 0.2f, 0.2f, 0.2f);    // Reflexo especular fraco
         //---FIM
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
@@ -857,7 +914,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
 
 
 
-        glActiveTexture(GL_TEXTURE0);
+
         glBindTexture(GL_TEXTURE_2D, g_TextureCubao); // mesma textura usada nos cubos
         glUniform1i(tex_image_uniform, 0);            // slot de textura
         for (const auto& obj : obstacles) // Desenha todos os obstaculos que são do tipo Box
@@ -869,6 +926,8 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
                         model = model * Matrix_Scale(obj.width, obj.height, obj.length);
                         model = model * Matrix_Rotate_Y(obj.angleY); // caso tenha rotação
                         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, g_TextureObstacles);
                         DrawCube(render_as_black_uniform);
                     PopMatrix(model);
                 }
@@ -920,7 +979,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(object_id_uniform, 0);
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+            glBindTexture(GL_TEXTURE_2D, g_TextureWalls);
 
             DrawCube(render_as_black_uniform);
         PopMatrix(model);
@@ -937,7 +996,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
 
 
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+        glBindTexture(GL_TEXTURE_2D, g_TextureCar);
         glUniform1i(tex_image_uniform, 0);
 
         // Translação inicial do torso
@@ -957,7 +1016,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             // acima e já enviadas para a placa de vídeo (GPU).
 
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+            glBindTexture(GL_TEXTURE_2D, g_TextureCar);
             glUniform1i(tex_image_uniform, 0);
             glUniform1i(object_id_uniform, 0);
             DrawCube(render_as_black_uniform);
@@ -977,7 +1036,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             model = model * Matrix_Scale(0.1f, 0.1f, 1.5f); // Escala do canhão
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
+            glBindTexture(GL_TEXTURE_2D, g_TextureCar);
             glUniform1i(tex_image_uniform, 0);
             DrawCube(render_as_black_uniform); // Draw Canhão
         PopMatrix(model);
