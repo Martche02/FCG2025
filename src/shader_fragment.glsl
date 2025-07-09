@@ -27,26 +27,26 @@ void main()
 {
     vec4 tex_color;
     vec2 scaled_uv;
+    vec3 pos = position_model.xyz;
 
     if (object_id == 0 || object_id == 2) {
-        vec3 pos = position_model.xyz;
-        vec3 N = normalize(vec3(0.0, 0.0, 1.0)); // Fixo, não gira com o mundo
-
+        vec3 abs_pos = abs(pos);
         float u, v;
-        if (abs(N.z) > abs(N.x) && abs(N.z) > abs(N.y)) 
-        {
-            u = mod(pos.x, 1.0);
-            v = mod(pos.y, 1.0);
-        } 
-        else if (abs(N.x) > abs(N.y)) 
+        if (abs_pos.x >= abs_pos.y && abs_pos.x >= abs_pos.z)
         {
             u = mod(pos.z, 1.0);
             v = mod(pos.y, 1.0);
         } 
-        else 
+        else if (abs_pos.y >= abs_pos.x && abs_pos.y >= abs_pos.z) 
         {
             u = mod(pos.x, 1.0);
             v = mod(pos.z, 1.0);
+        } 
+        else 
+        {
+            // Eixo Z dominante → projeção no plano XY
+            u = mod(pos.x, 1.0);
+            v = mod(pos.y, 1.0);
         }
 
         if (u < 0.0) u += 1.0;

@@ -2432,7 +2432,7 @@
 	<stddef.h>
 	<stdint.h>
 
-1751862520 source:c:\users\marce\codes\fcg\fcg2025\src\main.cpp
+1752069239 source:c:\users\marce\codes\fcg\fcg2025\src\main.cpp
 	<cmath>
 	<cstdio>
 	<cstdlib>
@@ -2452,6 +2452,8 @@
 	<vector>
 	"stb_image.h"
 	<tiny_obj_loader.h>
+	<glm/vec2.hpp>
+	<algorithm>
 
 1750020260 c:\users\marce\codes\fcg\fcg2025\include\glm\gtc\type_ptr.hpp
 	"../gtc/quaternion.hpp"
