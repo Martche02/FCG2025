@@ -51,7 +51,7 @@ void main()
         }
 
 
-        scaled_uv = vec2(u, v);
+        scaled_uv = fract(vec2(u, v) * 3.0);
     }
     else {
         scaled_uv = texcoords_frag;
