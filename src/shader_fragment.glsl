@@ -13,6 +13,7 @@ in vec2 texcoords_frag;
 
 uniform sampler2D texture_image;
 uniform sampler2D texture_roda;
+uniform sampler2D texture_bunny;
 uniform int object_id;
 
 uniform vec4 camera_position;
@@ -29,20 +30,20 @@ void main()
     vec2 scaled_uv;
     vec3 pos = position_model.xyz;
 
-    if (object_id == 0 || object_id == 2) {
+    if (object_id == 0 || object_id == 2 || object_id == 1 || object_id == 3 || object_id == 4) {
         vec3 abs_pos = abs(pos);
         float u, v;
         if (abs_pos.x >= abs_pos.y && abs_pos.x >= abs_pos.z)
         {
             u = mod(pos.z, 1.0);
             v = mod(pos.y, 1.0);
-        } 
-        else if (abs_pos.y >= abs_pos.x && abs_pos.y >= abs_pos.z) 
+        }
+        else if (abs_pos.y >= abs_pos.x && abs_pos.y >= abs_pos.z)
         {
             u = mod(pos.x, 1.0);
             v = mod(pos.z, 1.0);
-        } 
-        else 
+        }
+        else
         {
             // Eixo Z dominante → projeção no plano XY
             u = mod(pos.x, 1.0);
@@ -59,9 +60,11 @@ void main()
     if (object_id == 0)
         tex_color = texture(texture_image, scaled_uv);
     else if (object_id == 1)
-        tex_color = texture(texture_roda, scaled_uv); // ou texcoords_frag se preferir
+        tex_color = texture(texture_roda, scaled_uv);
+    else if (object_id == 3)
+        tex_color = texture(texture_bunny, scaled_uv);
     else if (object_id == 4)
-        tex_color = texture(texture_image, texcoords_frag);
+        tex_color = texture(texture_image, scaled_uv);
     else
         tex_color = vec4(1.0);
     vec3 P = position_world.xyz;

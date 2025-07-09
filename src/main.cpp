@@ -355,7 +355,7 @@ int main()
     stbi_image_free(image_bunny);
     g_CylinderMesh = CreateCylinderMesh(1.0f, 1.0f, 32);
 
-    unsigned char *image_roda = stbi_load("../../data/roda.png", &width, &height, &channels, 0);
+    unsigned char *image_roda = stbi_load("../../data/bunny_texture.jpg", &width, &height, &channels, 0);
     if (!image_roda) {
         fprintf(stderr, "Erro ao carregar textura roda.png\n");
         std::exit(EXIT_FAILURE);
@@ -381,7 +381,8 @@ int main()
     GLint object_id_uniform = glGetUniformLocation(g_GpuProgramID, "object_id");
     GLint tex_image_uniform = glGetUniformLocation(g_GpuProgramID, "texture_image");
     GLint tex_roda_uniform  = glGetUniformLocation(g_GpuProgramID, "texture_roda");
-
+    GLint tex_bunny_uniform = glGetUniformLocation(g_GpuProgramID, "texture_bunny");
+    glUniform1i(tex_bunny_uniform, 3);
     glUniform1i(tex_image_uniform, 0); // GL_TEXTURE0
     glUniform1i(tex_roda_uniform, 1);  // GL_TEXTURE1
     // Habilitamos o Z-buffer. Veja slides 104-116 do documento Aula_09_Projecoes.pdf.
