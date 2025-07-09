@@ -5,6 +5,7 @@
 // interpolação da cor de cada vértice, definidas em "shader_vertex.glsl" e
 // "main.cpp" (array color_coefficients).
 in vec4 cor_interpolada_pelo_rasterizador;
+in vec4 position_model;
 in vec4 position_world;
 in vec3 normal_world;
 in vec3 gouraud_color;
@@ -28,23 +29,24 @@ void main()
     vec2 scaled_uv;
 
     if (object_id == 0 || object_id == 2) {
-        vec3 N = normalize(normal_world);
-        float u, v;
+        vec3 pos = position_model.xyz;
+        vec3 N = normalize(vec3(0.0, 0.0, 1.0)); // Fixo, não gira com o mundo
 
-        if (abs(N.z) > abs(N.x) && abs(N.z) > abs(N.y)) {
-            // Frente/traseira → plano XY
-            u = mod(position_world.x, 1.0);
-            v = mod(position_world.y, 1.0);
-        }
-        else if (abs(N.x) > abs(N.y)) {
-            // Laterais → plano YZ
-            u = mod(position_world.z, 1.0);
-            v = mod(position_world.y, 1.0);
-        }
-        else {
-            // Topo/base → plano XZ
-            u = mod(position_world.x, 1.0);
-            v = mod(position_world.z, 1.0);
+        float u, v;
+        if (abs(N.z) > abs(N.x) && abs(N.z) > abs(N.y)) 
+        {
+            u = mod(pos.x, 1.0);
+            v = mod(pos.y, 1.0);
+        } 
+        else if (abs(N.x) > abs(N.y)) 
+        {
+            u = mod(pos.z, 1.0);
+            v = mod(pos.y, 1.0);
+        } 
+        else 
+        {
+            u = mod(pos.x, 1.0);
+            v = mod(pos.z, 1.0);
         }
 
         if (u < 0.0) u += 1.0;

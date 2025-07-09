@@ -12,6 +12,7 @@ out vec2 texcoords_frag;
 // Shader. Veja o arquivo "shader_fragment.glsl".
 out vec4 cor_interpolada_pelo_rasterizador;
 out vec4 position_world;
+out vec4 position_model;
 out vec3 normal_world;
 out vec3 gouraud_color;
 // Matrizes computadas no código C++ e enviadas para a GPU
@@ -40,6 +41,7 @@ void main()
     // slides 41-67 e 69-86 do documento Aula_09_Projecoes.pdf.
 
     gl_Position = projection * view * model * model_coefficients;
+    position_model = model_coefficients;
 
     // Como as variáveis acima  (tipo vec4) são vetores com 4 coeficientes,
     // também é possível acessar e modificar cada coeficiente de maneira
