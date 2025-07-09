@@ -233,7 +233,10 @@ bool g_UsePerspectiveProjection = true;
 
 // Variável que controla se o texto informativo será mostrado na tela.
 bool g_ShowInfoText = true;
-bool g_UseFreeCamera(true);
+bool g_UseFreeCamera(false);
+
+bool g_Win = false; // var que controla a vitória
+float limiar_vitoria = 4.0f; // dist da parede e da linha de chegada
 
 // Variáveis que definem um programa de GPU (shaders). Veja função LoadShadersFromFiles().
 GLuint g_GpuProgramID = 0;
@@ -492,6 +495,8 @@ glActiveTexture(GL_TEXTURE0);
 glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
 
 
+g_CannonMatrix = Matrix_Identity(); // Apenas para não dar problema na câmera quando executa o 1 frame com camfree = false
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -506,8 +511,8 @@ glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
 
                 // Cube/Map dimensions
         const float MAP_Width = 20.0f;
-        const float MAP_Height = 3.0f;
-        const float MAP_Depth = 50.0f;
+        const float MAP_Height = 20.0f;
+        const float MAP_Depth = 150.0f;
 
         // Car to Bounding box Limits
         const float CAR_HALF_WIDTH  = 1.0f; // raio + tolerância
@@ -787,7 +792,17 @@ glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
             }
 
         PushMatrix(model);
-            model = model * Matrix_Translate(0.0f, 2.55f, 0.0f); // eleva o Mapa (Cubo)
+            model = model * Matrix_Translate(0.0f, 0.8f, MAP_Depth/2.0f - limiar_vitoria); // eleva faixa de vitória
+            model = model * Matrix_Scale(MAP_Width, 0.6f, 0.1f);   // largura, altura, profundidade
+            glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(object_id_uniform, 999);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, 0);
+            DrawCube(render_as_black_uniform);
+        PopMatrix(model);
+
+        PushMatrix(model);
+            model = model * Matrix_Translate(0.0f, MAP_Height - 0.5f, 0.0f); // eleva o Mapa (Cubo)
             model = model * Matrix_Scale(MAP_Width, MAP_Height, MAP_Depth);   // largura, altura, profundidade
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(object_id_uniform, 0);
@@ -795,6 +810,9 @@ glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
             glBindTexture(GL_TEXTURE_2D, g_TextureCubao);
             DrawCube(render_as_black_uniform);
         PopMatrix(model);
+
+
+
 
 
         glEnable(GL_CULL_FACE);
@@ -917,37 +935,7 @@ glDrawElements(GL_TRIANGLES, g_BunnyNumTriangles, GL_UNSIGNED_INT, 0);
 glBindVertexArray(0);
 
 
-        // Neste ponto a matriz model recuperada é a matriz inicial (translação do torso)
 
-        // Agora queremos desenhar os eixos XYZ de coordenadas GLOBAIS.
-        // Para tanto, colocamos a matriz de modelagem igual à identidade.
-        // Veja slides 2-14 e 184-190 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        model = Matrix_Identity();
-
-        // Enviamos a nova matriz "model" para a placa de vídeo (GPU). Veja o
-        // arquivo "shader_vertex.glsl".
-        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-
-        // Pedimos para OpenGL desenhar linhas com largura de 10 pixels.
-        glLineWidth(10.0f);
-
-        // Informamos para a placa de vídeo (GPU) que a variável booleana
-        // "render_as_black" deve ser colocada como "false". Veja o arquivo
-        // "shader_vertex.glsl".
-        glUniform1i(render_as_black_uniform, false);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, g_TextureRoda);
-        // Pedimos para a GPU rasterizar os vértices dos eixos XYZ
-        // apontados pelo VAO como linhas. Veja a definição de
-        // g_VirtualScene["axes"] dentro da função BuildTriangles(), e veja
-        // a documentação da função glDrawElements() em
-        // http://docs.gl/gl3/glDrawElements.
-        glDrawElements(
-            g_VirtualScene["axes"].rendering_mode,
-            g_VirtualScene["axes"].num_indices,
-            GL_UNSIGNED_INT,
-            (void*)g_VirtualScene["axes"].first_index
-        );
 
         // "Desligamos" o VAO, evitando assim que operações posteriores venham a
         // alterar o mesmo. Isso evita bugs.
@@ -1285,6 +1273,12 @@ CollisionSides CheckWallCollision(
         collision.left = true;
     }
 
+
+    if (!g_Win && front.y >= (mapDepth / 2.0f - limiar_vitoria)) {
+        g_Win = true;
+        printf("GANHOU");
+    }
+
     return collision;
 }
 
@@ -1535,25 +1529,6 @@ void DrawCube(GLint render_as_black_uniform)
         (void*)g_VirtualScene["cube_faces"].first_index
     );
 
-    // Pedimos para OpenGL desenhar linhas com largura de 4 pixels.
-    glLineWidth(4.0f);
-
-    // Pedimos para a GPU rasterizar os vértices dos eixos XYZ
-    // apontados pelo VAO como linhas. Veja a definição de
-    // g_VirtualScene["axes"] dentro da função BuildTriangles(), e veja
-    // a documentação da função glDrawElements() em
-    // http://docs.gl/gl3/glDrawElements.
-    //
-    // Importante: estes eixos serão desenhamos com a matriz "model"
-    // definida acima, e portanto sofrerão as mesmas transformações
-    // geométricas que o cubo. Isto é, estes eixos estarão
-    // representando o sistema de coordenadas do modelo (e não o global)!
-    glDrawElements(
-        g_VirtualScene["axes"].rendering_mode,
-        g_VirtualScene["axes"].num_indices,
-        GL_UNSIGNED_INT,
-        (void*)g_VirtualScene["axes"].first_index
-    );
 
     // Informamos para a placa de vídeo (GPU) que a variável booleana
     // "render_as_black" deve ser colocada como "true". Veja o arquivo
