@@ -53,6 +53,12 @@
 #include <glm/vec2.hpp>
 #include <algorithm>
 
+
+extern GLuint textVAO; // Tentando resolver problema do textrender
+extern GLuint textVBO;
+extern GLuint textprogram_id;
+extern GLuint texttexture_id;
+
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4& M);
@@ -85,12 +91,7 @@ void TextRendering_PrintMatrixVectorProduct(GLFWwindow* window, glm::mat4 M, glm
 void TextRendering_PrintMatrixVectorProductMoreDigits(GLFWwindow* window, glm::mat4 M, glm::vec4 v, float x, float y, float scale = 1.0f);
 void TextRendering_PrintMatrixVectorProductDivW(GLFWwindow* window, glm::mat4 M, glm::vec4 v, float x, float y, float scale = 1.0f);
 
-// Funções abaixo renderizam como texto na janela OpenGL algumas matrizes e
-// outras informações do programa. Definidas após main().
-void TextRendering_ShowModelViewProjection(GLFWwindow* window, glm::mat4 projection, glm::mat4 view, glm::mat4 model, glm::vec4 p_model);
-void TextRendering_ShowEulerAngles(GLFWwindow* window);
-void TextRendering_ShowProjection(GLFWwindow* window);
-void TextRendering_ShowFramesPerSecond(GLFWwindow* window);
+
 
 // Funções callback para comunicação com o sistema operacional e interação do
 // usuário. Veja mais comentários nas definições das mesmas, abaixo.
@@ -232,7 +233,6 @@ float g_TorsoPositionZ = 0.0f;
 bool g_UsePerspectiveProjection = true;
 
 // Variável que controla se o texto informativo será mostrado na tela.
-bool g_ShowInfoText = true;
 bool g_UseFreeCamera(false);
 
 bool g_Win = false; // var que controla a vitória
@@ -242,6 +242,12 @@ float limiar_vitoria = 4.0f; // dist da parede e da linha de chegada
 GLuint g_GpuProgramID = 0;
 
 std::vector<BoundingObject> obstacles; //Vetor com os objetos
+
+// Time controller
+float g_StartTime = 0.0f;
+float g_FinalTime = 0.0f;
+bool g_TimerStarted = false;
+bool g_TimerStopped = false;
 
 
 
@@ -497,6 +503,7 @@ glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
 
 g_CannonMatrix = Matrix_Identity(); // Apenas para não dar problema na câmera quando executa o 1 frame com camfree = false
 
+
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
     {
@@ -551,6 +558,15 @@ g_CannonMatrix = Matrix_Identity(); // Apenas para não dar problema na câmera 
         // Aplica translação com base na direção atual do carro
         g_TorsoPositionX += sin(g_CarAngleY) * car_velocity * deltaTime;
         g_TorsoPositionZ += cos(g_CarAngleY) * car_velocity * deltaTime;
+
+
+
+        if (!g_TimerStarted && (g_Input.W || g_Input.A || g_Input.S || g_Input.D))
+        {
+            g_StartTime = glfwGetTime();
+            g_TimerStarted = true;
+        }
+
 
 
         float carX = g_TorsoPositionX;
@@ -942,16 +958,32 @@ glBindVertexArray(0);
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
-        // Imprimimos na tela os ângulos de Euler que controlam a rotação do
-        // terceiro cubo.
-        TextRendering_ShowEulerAngles(window);
 
-        // Imprimimos na informação sobre a matriz de projeção sendo utilizada.
-        TextRendering_ShowProjection(window);
+        // Ativando VAO e VBO corretos, shader e textura usados em TextRendering
+        extern GLuint textVAO, textVBO, textprogram_id, texttexture_id;
 
-        // Imprimimos na tela informação sobre o número de quadros renderizados
-        // por segundo (frames per second).
-        TextRendering_ShowFramesPerSecond(window);
+        glUseProgram(textprogram_id);
+        glBindVertexArray(textVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+        glActiveTexture(GL_TEXTURE0 + 31); // unidade usada em TextRendering_Init
+        glBindTexture(GL_TEXTURE_2D, texttexture_id);
+
+
+        if (g_Win)
+        {
+            std::stringstream ss;
+            ss.precision(2);
+            ss << std::fixed << "Tempo Final: " << g_FinalTime << "s";
+
+            float lineheight = TextRendering_LineHeight(window);
+            float charwidth = TextRendering_CharWidth(window);
+            float xpos = -((float)ss.str().length()) * charwidth / 2.0f;
+            float ypos = 0.0f;
+
+            TextRendering_PrintString(window, ss.str(), xpos, ypos, 2.0f);
+        }
+        glUseProgram(0); // limpeza opcional
+
 
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
@@ -982,6 +1014,12 @@ void FireCannon(float carX, float carZ, float carAngleY)
 {
     printf("Bang!\n");
     printf("Car position: (%.2f, %.2f)\n", carX, carZ);
+
+    if (!g_TimerStarted)
+    {
+        g_StartTime = glfwGetTime();
+        g_TimerStarted = true;
+    }
 
     glm::vec2 rayOrigin = glm::vec2(carX, carZ);
     glm::vec2 rayDir = glm::normalize(glm::vec2(sin(carAngleY), cos(carAngleY)));
@@ -1276,7 +1314,13 @@ CollisionSides CheckWallCollision(
 
     if (!g_Win && front.y >= (mapDepth / 2.0f - limiar_vitoria)) {
         g_Win = true;
-        printf("GANHOU");
+
+
+        if (!g_TimerStopped) {
+            g_FinalTime = glfwGetTime() - g_StartTime;
+            g_TimerStopped = true;
+            printf("GANHOU em %.2f segundos!\n", g_FinalTime);
+        }
     }
 
     return collision;
@@ -2241,11 +2285,6 @@ void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mod)
     }
 
 
-    // Se o usuário apertar a tecla H, fazemos um "toggle" do texto informativo mostrado na tela.
-    if (key == GLFW_KEY_H && action == GLFW_PRESS)
-    {
-        g_ShowInfoText = !g_ShowInfoText;
-    }
 
     if (key == GLFW_KEY_T && action == GLFW_PRESS)
     {
@@ -2263,130 +2302,5 @@ void ErrorCallback(int error, const char* description)
 // mesmo por todos os sistemas de coordenadas armazenados nas matrizes model,
 // view, e projection; e escreve na tela as matrizes e pontos resultantes
 // dessas transformações.
-void TextRendering_ShowModelViewProjection(
-    GLFWwindow* window,
-    glm::mat4 projection,
-    glm::mat4 view,
-    glm::mat4 model,
-    glm::vec4 p_model
-)
-{
-    if ( !g_ShowInfoText )
-        return;
 
-    glm::vec4 p_world = model*p_model;
-    glm::vec4 p_camera = view*p_world;
-    glm::vec4 p_clip = projection*p_camera;
-    glm::vec4 p_ndc = p_clip / p_clip.w;
-
-    float pad = TextRendering_LineHeight(window);
-
-    TextRendering_PrintString(window, " Model matrix             Model     In World Coords.", -1.0f, 1.0f-pad, 1.0f);
-    TextRendering_PrintMatrixVectorProduct(window, model, p_model, -1.0f, 1.0f-2*pad, 1.0f);
-
-    TextRendering_PrintString(window, "                                        |  ", -1.0f, 1.0f-6*pad, 1.0f);
-    TextRendering_PrintString(window, "                            .-----------'  ", -1.0f, 1.0f-7*pad, 1.0f);
-    TextRendering_PrintString(window, "                            V              ", -1.0f, 1.0f-8*pad, 1.0f);
-
-    TextRendering_PrintString(window, " View matrix              World     In Camera Coords.", -1.0f, 1.0f-9*pad, 1.0f);
-    TextRendering_PrintMatrixVectorProduct(window, view, p_world, -1.0f, 1.0f-10*pad, 1.0f);
-
-    TextRendering_PrintString(window, "                                        |  ", -1.0f, 1.0f-14*pad, 1.0f);
-    TextRendering_PrintString(window, "                            .-----------'  ", -1.0f, 1.0f-15*pad, 1.0f);
-    TextRendering_PrintString(window, "                            V              ", -1.0f, 1.0f-16*pad, 1.0f);
-
-    TextRendering_PrintString(window, " Projection matrix        Camera                    In NDC", -1.0f, 1.0f-17*pad, 1.0f);
-    TextRendering_PrintMatrixVectorProductDivW(window, projection, p_camera, -1.0f, 1.0f-18*pad, 1.0f);
-
-    int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-
-    glm::vec2 a = glm::vec2(-1, -1);
-    glm::vec2 b = glm::vec2(+1, +1);
-    glm::vec2 p = glm::vec2( 0,  0);
-    glm::vec2 q = glm::vec2(width, height);
-
-    glm::mat4 viewport_mapping = Matrix(
-        (q.x - p.x)/(b.x-a.x), 0.0f, 0.0f, (b.x*p.x - a.x*q.x)/(b.x-a.x),
-        0.0f, (q.y - p.y)/(b.y-a.y), 0.0f, (b.y*p.y - a.y*q.y)/(b.y-a.y),
-        0.0f , 0.0f , 1.0f , 0.0f ,
-        0.0f , 0.0f , 0.0f , 1.0f
-    );
-
-    TextRendering_PrintString(window, "                                                       |  ", -1.0f, 1.0f-22*pad, 1.0f);
-    TextRendering_PrintString(window, "                            .--------------------------'  ", -1.0f, 1.0f-23*pad, 1.0f);
-    TextRendering_PrintString(window, "                            V                           ", -1.0f, 1.0f-24*pad, 1.0f);
-
-    TextRendering_PrintString(window, " Viewport matrix           NDC      In Pixel Coords.", -1.0f, 1.0f-25*pad, 1.0f);
-    TextRendering_PrintMatrixVectorProductMoreDigits(window, viewport_mapping, p_ndc, -1.0f, 1.0f-26*pad, 1.0f);
-}
-
-// Escrevemos na tela os ângulos de Euler definidos nas variáveis globais
-// g_AngleX, g_AngleY, e g_AngleZ.
-void TextRendering_ShowEulerAngles(GLFWwindow* window)
-{
-    if ( !g_ShowInfoText )
-        return;
-
-    float pad = TextRendering_LineHeight(window);
-
-    char buffer[80];
-    snprintf(buffer, 80, "Euler Angles rotation matrix = Z(%.2f)*Y(%.2f)*X(%.2f)\n", g_AngleZ, g_AngleY, g_AngleX);
-
-    TextRendering_PrintString(window, buffer, -1.0f+pad/10, -1.0f+2*pad/10, 1.0f);
-}
-
-// Escrevemos na tela qual matriz de projeção está sendo utilizada.
-void TextRendering_ShowProjection(GLFWwindow* window)
-{
-    if ( !g_ShowInfoText )
-        return;
-
-    float lineheight = TextRendering_LineHeight(window);
-    float charwidth = TextRendering_CharWidth(window);
-
-    if ( g_UsePerspectiveProjection )
-        TextRendering_PrintString(window, "Perspective", 1.0f-13*charwidth, -1.0f+2*lineheight/10, 1.0f);
-    else
-        TextRendering_PrintString(window, "Orthographic", 1.0f-13*charwidth, -1.0f+2*lineheight/10, 1.0f);
-}
-
-// Escrevemos na tela o número de quadros renderizados por segundo (frames per
-// second).
-void TextRendering_ShowFramesPerSecond(GLFWwindow* window)
-{
-    if ( !g_ShowInfoText )
-        return;
-
-    // Variáveis estáticas (static) mantém seus valores entre chamadas
-    // subsequentes da função!
-    static float old_seconds = (float)glfwGetTime();
-    static int   ellapsed_frames = 0;
-    static char  buffer[20] = "?? fps";
-    static int   numchars = 7;
-
-    ellapsed_frames += 1;
-
-    // Recuperamos o número de segundos que passou desde a execução do programa
-    float seconds = (float)glfwGetTime();
-
-    // Número de segundos desde o último cálculo do fps
-    float ellapsed_seconds = seconds - old_seconds;
-
-    if ( ellapsed_seconds > 1.0f )
-    {
-        numchars = snprintf(buffer, 20, "%.2f fps", ellapsed_frames / ellapsed_seconds);
-
-        old_seconds = seconds;
-        ellapsed_frames = 0;
-    }
-
-    float lineheight = TextRendering_LineHeight(window);
-    float charwidth = TextRendering_CharWidth(window);
-
-    TextRendering_PrintString(window, buffer, 1.0f-(numchars + 1)*charwidth, 1.0f-lineheight, 1.0f);
-}
-
-// set makeprg=cd\ ..\ &&\ make\ run\ >/dev/null
-// vim: set spell spelllang=pt_br :
 
