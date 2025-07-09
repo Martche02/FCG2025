@@ -227,7 +227,7 @@ float g_ForearmAngleX = 0.0f;
 // Variáveis que controlam translação do torso
 float g_TorsoPositionX = 0.0f;
 float g_TorsoPositionY = 0.0f;
-float g_TorsoPositionZ = 0.0f;
+float g_TorsoPositionZ = -60.0f;
 
 
 // Variável que controla se o texto informativo será mostrado na tela.
@@ -418,7 +418,7 @@ int main()
 
 
     // Inserindo obstáculos no vetor obstacles
-    obstacles.push_back(MakeBox(1, 4.0f, 5.0f, 0.0f, 1.2f, 3.0f, 1.2f));
+    obstacles.push_back(MakeBox(1, 0.0f, 0.0f, 0.0f, 2.0f, 1.0f, 1.5f));
     obstacles.push_back(MakeBox(2, 2.5f, 4.0f, 0.2f, 1.0f, 2.0f, 1.0f));
     obstacles.push_back(MakeBox(3, -3.0f, 4.5f, 0.0f, 1.0f, 1.5f, 1.0f));
     obstacles.push_back(MakeBox(4, 1.5f, 6.0f, 0.0f, 0.8f, 2.5f, 0.8f));
@@ -501,6 +501,8 @@ glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
 
 g_CannonMatrix = Matrix_Identity(); // Apenas para não dar problema na câmera quando executa o 1 frame com camfree = false
 
+
+float block_time = 0.0f; // pos do bloco na curva de bezier
 
     // Ficamos em um loop infinito, renderizando, até que o usuário feche a janela
     while (!glfwWindowShouldClose(window))
@@ -907,9 +909,8 @@ g_CannonMatrix = Matrix_Identity(); // Apenas para não dar problema na câmera 
         PopMatrix(model);
         tinyobj::attrib_t attrib;
 
-// [BUNNY TRANSFORM]
-bunny_time += 0.001f;
-if (bunny_time > 1.0f) bunny_time = 0.0f;
+
+
 
 // Bézier com 5 pontos
 auto bezier = [](std::vector<glm::vec3> cp, float t) -> glm::vec3 {
@@ -920,8 +921,38 @@ auto bezier = [](std::vector<glm::vec3> cp, float t) -> glm::vec3 {
     return temp[0];
 };
 
-glm::vec3 bunny_pos = bezier(bezier_control_points, bunny_time);
+block_time += 0.00005f; // velocidade constante
+if (block_time > 1.0f) block_time = 0.0f;
+
+glm::vec3 block_pos = bezier(bezier_control_points, block_time);
+
+// Atualiza o bloco de ID 1
+for (auto& obs : obstacles)
+{
+    if (obs.id == 1 && obs.type == 1)
+    {
+        obs.x = block_pos.x;
+        obs.z = block_pos.z;
+        break;
+    }
+}
+
+
+
+glm::vec3 bunny_pos = glm::vec3(-8.0f, 1.0f, 73.0f);
 glm::mat4 model_bunny = glm::translate(glm::mat4(1.0f), bunny_pos);
+model_bunny = model_bunny * Matrix_Rotate_Y(glm::pi<float>());
+glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_bunny));
+glUniform1i(object_id_uniform, 4); // bunny object id
+glActiveTexture(GL_TEXTURE0);
+glBindTexture(GL_TEXTURE_2D, g_BunnyTexture);
+glBindVertexArray(g_BunnyVAO);
+glDrawElements(GL_TRIANGLES, g_BunnyNumTriangles, GL_UNSIGNED_INT, 0);
+glBindVertexArray(0);
+
+bunny_pos = glm::vec3(8.0f, 1.0f, 73.0f);
+model_bunny = glm::translate(glm::mat4(1.0f), bunny_pos);
+model_bunny = model_bunny * Matrix_Rotate_Y(glm::pi<float>());
 glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model_bunny));
 glUniform1i(object_id_uniform, 4); // bunny object id
 glActiveTexture(GL_TEXTURE0);
@@ -2058,11 +2089,11 @@ double g_LastCursorPosX, g_LastCursorPosY;
 
 
 std::vector<glm::vec3> bezier_control_points = {
-    glm::vec3(5.0f, 0.0f, 0.0f),
-    glm::vec3(6.0f, 0.0f, -4.0f),
-    glm::vec3(0.0f, 0.0f, -6.0f),
-    glm::vec3(-6.0f, 0.0f, -4.0f),
-    glm::vec3(-5.0f, 0.0f, 0.0f)
+    glm::vec3(-10.0f, 0.0f,  0.0f),
+    glm::vec3(-5.0f,  0.0f,  6.0f),
+    glm::vec3( 0.0f,  0.0f,  7.0f),
+    glm::vec3( 5.0f,  0.0f,  6.0f),
+    glm::vec3( 10.0f, 0.0f,  0.0f)
 };
 
 float bunny_time = 0.0f;
