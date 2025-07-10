@@ -12,18 +12,19 @@ Para poder observar com qualidade os detalhes desse jogo, todos os objetos receb
 ## Contribuição dos Integrantes
 
 - Bruno: Ficou responsável por implementar:
-- - [jogabilidade e estrutura da arena](../../issues/11)
-- - [Animações baseadas no tempo $\Delta t$](../../issues/10)
-- - [Testes de Intersecção](../../issues/5)
-- - [Transformação das Rodas](../../issues/2)
-- - [Instância de objetos](../../issues/4)
+- - [jogabilidade e estrutura da arena](../../issues/11) (Implementado)
+- - [Animações baseadas no tempo $\Delta t$](../../issues/10) (Implementado)
+- - [Testes de Intersecção](../../issues/5) (Parcialmente Implementado [Apenas intersecção de reta plano para o canhão {Reta-Esfera e Reta-Triângulo possuem um protótipo, mas é falho}])
+- - [Transformação das Rodas e Movimentação](../../issues/2) (Implementado)
+- - [Instância de objetos](../../issues/4) (Implementado [Todos os paralelepipedos da cena são criados em cima do mesmo modelo])
+- - [jogabilidade e estrutura da arena] (Funcionalidade opcional) [Testes de sobreposição de AABB utilizados para colisão mais eficiente]
 - Marcelo: Ficou responsável por implementar:
-- - [modelos de Iluminação Difusa e Blinn-Phong](../../issues/6)
-- - [Modelos de Interpolação de Phong e Gouraud](../../issues/7)
-- - [Câmera livre e câmera look-at](../../issues/3)
-- - [Malhas poligonais complexas](../../issues/1)
-- - [Movimentação com curva Bézier cúbica](../../issues/9).
-- Ambos ficaram responsáveis pelas [texturas](../../issues/8)
+- - [modelos de Iluminação Difusa e Blinn-Phong](../../issues/6) (Implementado)
+- - [Modelos de Interpolação de Phong e Gouraud](../../issues/7) (Implementado)
+- - [Câmera livre e câmera look-at](../../issues/3) (Implementado)
+- - [Malhas poligonais complexas](../../issues/1) (Implementado)
+- - [Movimentação com curva Bézier cúbica](../../issues/9). (Implementado)
+- Ambos ficaram responsáveis pelas [texturas](../../issues/8) (Implementado)
 
 ---
 
@@ -72,3 +73,9 @@ Utilizamos vários conceitos trabalhados em aula, como
 ## Compilação e Execução
 
 Execute `./bin/Release/main.exe`
+
+
+## Principais dificuldades
+- Bruno:
+    Tive problemas principalmente nos testes de colisão, onde pretendia utilizar as normais das faces do carro e seus ponto futuros para lidar com a colisão, mas isso resultava em um colisão imperfeita que tinha dificuldades de tratar cenários específicos de colisão diagonal, assim optei por utilizar uma abordagem de sobreposição de AABB, que também teve uma implementação trabalhosa, mas rendeu um resultado satisfatório.
+  O segundo maior problema foi para corrigir as texturas esticadas, tive muitas dificuldades devido ao Cubo de modelo do Lab3 utilizar vértices de [-1,0], padrão que eu não estava familiarizado, no fim, depois de muito trabalho, minha solução foi trocar a posição dos vértices para o intervalo padrão [-0.5,+0.5], isso exigiu alta refatoração do código, mas foi capaz de corrigir os problemas.
