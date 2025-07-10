@@ -12,18 +12,18 @@ Para poder observar com qualidade os detalhes desse jogo, todos os objetos receb
 ## Contribuição dos Integrantes
 
 - Bruno: Ficou responsável por implementar:
-- - [jogabilidade e estrutura da arena](issues/11)
-- - [Animações baseadas no tempo $\Delta t$](issues/10)
-- - [Testes de Intersecção](issues/5)
-- - [Transformação das Rodas](issues/2)
-- - [Instância de objetos](issues/4)
+- - [jogabilidade e estrutura da arena](../../issues/11)
+- - [Animações baseadas no tempo $\Delta t$](../../issues/10)
+- - [Testes de Intersecção](../../issues/5)
+- - [Transformação das Rodas](../../issues/2)
+- - [Instância de objetos](../../issues/4)
 - Marcelo: Ficou responsável por implementar:
-- - [modelos de Iluminação Difusa e Blinn-Phong](issues/6)
-- - [Modelos de Interpolação de Phong e Gouraud](issues/7)
-- - [Câmera livre e câmera look-at](issues/3)
-- - [Malhas poligonais complexas](issues/1)
-- - [Movimentação com curva Bézier cúbica](issues/9).
-- Ambos ficaram responsáveis pelas [texturas](issues/8)
+- - [modelos de Iluminação Difusa e Blinn-Phong](../../issues/6)
+- - [Modelos de Interpolação de Phong e Gouraud](../../issues/7)
+- - [Câmera livre e câmera look-at](../../issues/3)
+- - [Malhas poligonais complexas](../../issues/1)
+- - [Movimentação com curva Bézier cúbica](../../issues/9).
+- Ambos ficaram responsáveis pelas [texturas](../../issues/8)
 
 ---
 
@@ -51,11 +51,11 @@ Utilizamos vários conceitos trabalhados em aula, como
 
 ### Screenshot 1
 
-![Screenshot 1](imagens/protagonista.png)
+![Protagonista](imagens/protagonista.png)
 
 ### Screenshot 2
 
-![Screenshot 2](imagens/inicial.png)
+![Tela Inicial](imagens/inicial.png)
 
 ---
 
