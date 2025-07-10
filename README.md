@@ -30,6 +30,7 @@ Para poder observar com qualidade os detalhes desse jogo, todos os objetos receb
 ## Uso de Ferramentas de IA
 
 Fizemos uso do ChatGPT, que foi muito útil, especialmente em debug. Usei (marcelo) bastante para a parte das texturas e na importação do objeto de malha complexa (coelho).
+Já o meu uso (Bruno), foi principalmente para a criação do Mesh dos cillindros, no auxilio de alguns cálculos (mesmo seguindo as orientações dos slides tive alguns erros que me ajudou a resolver intersecção/física) e para correção de Bugs, se mostrou extremamente útil quando eu especificava com precisão já identificando os conceitos trabalhados na disciplina e por onde estava o erro (caso pedisse algo amplo sem dar um contexto muito específico ele mais atrapalhava que ajudava (por exemplo no mapeamento das texturas))
 
 ---
 
