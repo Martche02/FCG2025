@@ -9,7 +9,7 @@ Este trabalho utiliza várias instâncias de um mesmo objeto para renderizar o p
 ## Contribuição dos Integrantes
 
 - Bruno:
-- Marcelo: Ficou responsável por implementar os modelos de Iluminação Difusa e Blinn-Phong (issue #6), Modelos de Interpolação de Phong e Gouraud (#7), Câmera livre e câmera look-at (#3), Malhas poligonais complexas (#1) e Movimentação com curva Bézier cúbica (#9).
+- Marcelo: Ficou responsável por implementar os modelos de Iluminação Difusa e Blinn-Phong (issues/6), Modelos de Interpolação de Phong e Gouraud (#7), Câmera livre e câmera look-at (#3), Malhas poligonais complexas (#1) e Movimentação com curva Bézier cúbica (#9).
 - Bruno:
 - Marcelo: Ficou responsável por implementar os modelos de Iluminação Difusa e Blinn-Phong (issue #6), Modelos de Interpolação de Phong e Gouraud (#7), Câmera livre e câmera look-at (#3), Malhas poligonais complexas (#1) e Movimentação com curva Bézier cúbica (#9).
 
@@ -22,6 +22,16 @@ Fizemos uso do ChatGPT, que foi muito útil, especialmente em debug. Usei (marce
 ---
 
 ## Desenvolvimento e Aplicação dos Conceitos de Computação Gráfica
+
+Utilizamos vários conceitos trabalhados em aula, como
+
+- Transformações Hierárquicas (LAB3)
+- - Chaci, Rodas e Canhão
+- Texturas (LAB5)
+- - Arena, tanque, obstáculos, rodas, etc.
+- Iluminação (LAB4)
+- Modelo Local (LAB2)
+- - Para aplicar texturas localmente
 
 ---
 
@@ -43,7 +53,6 @@ Fizemos uso do ChatGPT, que foi muito útil, especialmente em debug. Usei (marce
 - **Tecla `F` | Tecla `T`:** troca a câmera
 - **Tecla `Esc`:** fecha a aplicação
 - **Tecla `Espaço`:** Atira
-- **Tecla `Espaço`:** Atira
 
 ---
 
@@ -53,8 +62,6 @@ Fizemos uso do ChatGPT, que foi muito útil, especialmente em debug. Usei (marce
 
 - [ ] Code::Bloks
 - [ ] Biblioteca OpenGL instalada
-- [ ] GLFW
-- [ ] Windows
 - [ ] GLFW
 - [ ] Windows
 
