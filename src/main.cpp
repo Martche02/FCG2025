@@ -576,18 +576,44 @@ std::vector<float> bunny_vertices;
 std::vector<unsigned int> bunny_indices;
 
 for (const auto& shape : shapes) {
-    for (const auto& index : shape.mesh.indices) {
-        bunny_vertices.push_back(attrib.vertices[3 * index.vertex_index + 0]);
-        bunny_vertices.push_back(attrib.vertices[3 * index.vertex_index + 1]);
-        bunny_vertices.push_back(attrib.vertices[3 * index.vertex_index + 2]);
+    for (size_t f = 0; f < shape.mesh.indices.size(); f += 3) {
+        glm::vec3 v[3];
 
-        float u = 0.0f, v = 0.0f;
-        if (index.texcoord_index >= 0) {
-            u = attrib.texcoords[2 * index.texcoord_index + 0];
-            v = attrib.texcoords[2 * index.texcoord_index + 1];
+        for (int i = 0; i < 3; ++i) {
+            int vi = shape.mesh.indices[f + i].vertex_index;
+            v[i] = glm::vec3(
+                attrib.vertices[3 * vi + 0],
+                attrib.vertices[3 * vi + 1],
+                attrib.vertices[3 * vi + 2]
+            );
         }
-        bunny_vertices.push_back(u);
-        bunny_vertices.push_back(v);
+
+        glm::vec3 edge1 = v[1] - v[0];
+        glm::vec3 edge2 = v[2] - v[0];
+        glm::vec3 normal = glm::normalize(glm::cross(edge1, edge2));
+
+        for (int i = 0; i < 3; ++i) {
+            int vi = shape.mesh.indices[f + i].vertex_index;
+            float u = 0.0f, t = 0.0f;
+
+            if (shape.mesh.indices[f + i].texcoord_index >= 0) {
+                u = attrib.texcoords[2 * shape.mesh.indices[f + i].texcoord_index + 0];
+                t = attrib.texcoords[2 * shape.mesh.indices[f + i].texcoord_index + 1];
+            }
+
+            bunny_vertices.push_back(v[i].x); // posição
+            bunny_vertices.push_back(v[i].y);
+            bunny_vertices.push_back(v[i].z);
+
+            bunny_vertices.push_back(normal.x); // normal
+            bunny_vertices.push_back(normal.y);
+            bunny_vertices.push_back(normal.z);
+
+            bunny_vertices.push_back(u); // texcoord
+            bunny_vertices.push_back(t);
+
+            bunny_indices.push_back(bunny_indices.size());
+        }
     }
 }
 
@@ -609,9 +635,13 @@ glBufferData(GL_ARRAY_BUFFER, bunny_vertices.size() * sizeof(float), bunny_verti
 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 glBufferData(GL_ELEMENT_ARRAY_BUFFER, bunny_indices.size() * sizeof(unsigned int), bunny_indices.data(), GL_STATIC_DRAW);
 
-glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0); // posição
 glEnableVertexAttribArray(0);
-glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); // normal
+glEnableVertexAttribArray(1);
+
+glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); // texcoord
 glEnableVertexAttribArray(2);
 
 glBindVertexArray(0);

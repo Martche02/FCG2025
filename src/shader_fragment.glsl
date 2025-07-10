@@ -60,7 +60,7 @@ void main()
         tex_color = texture(texture_image, scaled_uv);
     else if (object_id == 1)
         tex_color = texture(texture_roda, scaled_uv);
-    else if (object_id == 3)
+    else if (object_id == 4)
         tex_color = texture(texture_bunny, scaled_uv);
     else if (object_id == 999) {
         color.rgb = vec3(1.0);
