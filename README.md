@@ -13,7 +13,7 @@ Para poder observar com qualidade os detalhes desse jogo, todos os objetos receb
 
 - Bruno: Ficou responsável por implementar:
 - - [jogabilidade e estrutura da arena](issues/11)
-- - [Animações baseadas no tempo ($\Delta t$)](issues/10)
+- - [Animações baseadas no tempo $\Delta t$](issues/10)
 - - [Testes de Intersecção](issues/5)
 - - [Transformação das Rodas](issues/2)
 - - [Instância de objetos](issues/4)
@@ -27,7 +27,7 @@ Para poder observar com qualidade os detalhes desse jogo, todos os objetos receb
 
 ---
 
-## Uso de Ferramentas de IA (ChatGPT, Copilot, etc.)
+## Uso de Ferramentas de IA
 
 Fizemos uso do ChatGPT, que foi muito útil, especialmente em debug. Usei (marcelo) bastante para a parte das texturas e na importação do objeto de malha complexa (coelho).
 
