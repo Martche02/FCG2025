@@ -74,8 +74,10 @@ Utilizamos vários conceitos trabalhados em aula, como
 
 Execute `./bin/Release/main.exe`
 
-
 ## Principais dificuldades
+
 - Bruno:
-    Tive problemas principalmente nos testes de colisão, onde pretendia utilizar as normais das faces do carro e seus ponto futuros para lidar com a colisão, mas isso resultava em um colisão imperfeita que tinha dificuldades de tratar cenários específicos de colisão diagonal, assim optei por utilizar uma abordagem de sobreposição de AABB, que também teve uma implementação trabalhosa, mas rendeu um resultado satisfatório.
+  Tive problemas principalmente nos testes de colisão, onde pretendia utilizar as normais das faces do carro e seus ponto futuros para lidar com a colisão, mas isso resultava em um colisão imperfeita que tinha dificuldades de tratar cenários específicos de colisão diagonal, assim optei por utilizar uma abordagem de sobreposição de AABB, que também teve uma implementação trabalhosa, mas rendeu um resultado satisfatório.
   O segundo maior problema foi para corrigir as texturas esticadas, tive muitas dificuldades devido ao Cubo de modelo do Lab3 utilizar vértices de [-1,0], padrão que eu não estava familiarizado, no fim, depois de muito trabalho, minha solução foi trocar a posição dos vértices para o intervalo padrão [-0.5,+0.5], isso exigiu alta refatoração do código, mas foi capaz de corrigir os problemas.
+- Marcelo:
+  A maior dificuldade foi em conseguir utilizar mais de uma textura. Para passar de 1 textura para 2 texturas, a maior parte do processo foi copia&cola, então na hora que percebi que ia ter que trocar o canal do `glUniform1i`, as coisas complicaram. A segunda maior dificuldade foi importar o modelo de `.obj` e conseguir uma textura para ele que se encaixasse, visto que teve todo o processo de adicionar a `tiny_obj_loader`.
