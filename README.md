@@ -1,3 +1,5 @@
+# [Link para Vídeo YouTube](https://youtu.be/t6JVONPocig)
+
 # Trabalho de Computação Gráfica
 
 Este jogo de estilo corrida contra o tempo é o trabalho final de FCG/2025
