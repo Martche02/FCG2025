@@ -17,7 +17,7 @@ Para poder observar com qualidade os detalhes desse jogo, todos os objetos receb
 - - [Testes de Intersecção](../../issues/5) (Parcialmente Implementado [Apenas intersecção de reta plano para o canhão {Reta-Esfera e Reta-Triângulo possuem um protótipo, mas é falho}])
 - - [Transformação das Rodas e Movimentação](../../issues/2) (Implementado)
 - - [Instância de objetos](../../issues/4) (Implementado [Todos os paralelepipedos da cena são criados em cima do mesmo modelo])
-- - [jogabilidade e estrutura da arena] (Funcionalidade opcional) [Testes de sobreposição de AABB utilizados para colisão mais eficiente]
+- - Jogabilidade e estrutura da arena (Funcionalidade opcional) [Testes de sobreposição de AABB utilizados para colisão mais eficiente]
 - Marcelo: Ficou responsável por implementar:
 - - [modelos de Iluminação Difusa e Blinn-Phong](../../issues/6) (Implementado)
 - - [Modelos de Interpolação de Phong e Gouraud](../../issues/7) (Implementado)
