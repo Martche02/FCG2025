@@ -478,87 +478,72 @@ int main()
     float g_WheelAngle = 0.0f; // rotação as rodas para animar (ou tentar)
 
 
-    // Inserindo obstáculos no vetor obstacles
-    obstacles.push_back(MakeBox(1, 0.0f, 0.0f, 0.0f, 5.0f, 4.0f, 1.5f)); // Id, posx, posz, rot, largura, prof, altura
+    obstacles.push_back(MakeBox(1, 0.0f, 0.0f, 0.0f, 5.0f, 4.0f, 3.0f)); // Id, posx, posz, rot, largura, prof, altura
 
+    obstacles.push_back(MakeBox(200, 4.75f, -50.0f, 0.0f, 10.5f, 1.0f, 6.0f));
 
-    // Z = -50 → CENTRAL BLOQUEIA LADO DIREITO
-    obstacles.push_back(MakeBox(200, 4.75f, -50.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+    obstacles.push_back(MakeBox(201, -8.0f, -40.0f, 0.0f, 3.5f, 1.0f, 10.0f));
+    obstacles.push_back(MakeBox(202, 8.0f, -40.0f, 0.0f, 3.5f, 1.0f, 10.0f));
 
-    // Z = -40 → LATERAIS
-    obstacles.push_back(MakeBox(201, -8.0f, -40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
-    obstacles.push_back(MakeBox(202, 8.0f, -40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(203, -4.75f, -30.0f, 0.0f, 10.5f, 1.0f, 6.0f));
 
-    // Z = -30 → CENTRAL BLOQUEIA LADO ESQUERDO
-    obstacles.push_back(MakeBox(203, -4.75f, -30.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+    obstacles.push_back(MakeBox(204, -8.5f, -20.0f, 0.0f, 3.5f, 1.0f, 10.0f));
 
-    // Z = -20 → LATERAL ESQUERDA
-    obstacles.push_back(MakeBox(204, -8.5f, -20.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(205, 4.75f, -10.0f, 0.0f, 10.5f, 1.0f, 6.0f));
 
-    // Z = -10 → CENTRAL BLOQUEIA LADO DIREITO
-    obstacles.push_back(MakeBox(205, 4.75f, -10.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+    obstacles.push_back(MakeBox(206, -7.5f, 0.0f, 0.0f, 4.0f, 1.0f, 10.0f));
+    obstacles.push_back(MakeBox(207, 7.5f, 0.0f, 0.0f, 4.0f, 1.0f, 10.0f));
 
-    // Z = 0 → LATERAIS
-    obstacles.push_back(MakeBox(206, -7.5f, 0.0f, 0.0f, 4.0f, 1.0f, 5.0f));
-    obstacles.push_back(MakeBox(207, 7.5f, 0.0f, 0.0f, 4.0f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(208, 0.0f, 10.0f, 0.0f, 15.0f, 1.0f, 6.0f));
 
-    // Z = 10 → ÚNICA CENTRAL NORMAL
-    obstacles.push_back(MakeBox(208, 0.0f, 10.0f, 0.0f, 15.0f, 1.0f, 3.0f));
+    obstacles.push_back(MakeBox(209, 8.0f, 20.0f, 0.0f, 3.5f, 1.0f, 10.0f));
 
-    // Z = 20 → LATERAL DIREITA
-    obstacles.push_back(MakeBox(209, 8.0f, 20.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(210, -4.75f, 30.0f, 0.0f, 10.5f, 1.0f, 6.0f));
 
-    // Z = 30 → CENTRAL BLOQUEIA LADO ESQUERDO
-    obstacles.push_back(MakeBox(210, -4.75f, 30.0f, 0.0f, 10.5f, 1.0f, 3.0f));
+    obstacles.push_back(MakeBox(211, -8.0f, 40.0f, 0.0f, 3.5f, 1.0f, 10.0f));
+    obstacles.push_back(MakeBox(212, 8.0f, 40.0f, 0.0f, 3.5f, 1.0f, 10.0f));
 
-    // Z = 40 → LATERAIS
-    obstacles.push_back(MakeBox(211, -8.0f, 40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
-    obstacles.push_back(MakeBox(212, 8.0f, 40.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(213, 4.75f, 50.0f, 0.0f, 10.5f, 1.0f, 6.0f));
 
-    // Z = 50 → CENTRAL BLOQUEIA LADO DIREITO
-    obstacles.push_back(MakeBox(213, 4.75f, 50.0f, 0.0f, 10.5f, 1.0f, 3.0f));
-
-    // Z = 60 → LATERAL ESQUERDA
-    obstacles.push_back(MakeBox(214, -8.5f, 60.0f, 0.0f, 3.5f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(214, -8.5f, 60.0f, 0.0f, 3.5f, 1.0f, 10.0f));
 
 
 
 
-    //OBSTACULOS SOLTOS
-    // Região: Z = -48 a -42
-    obstacles.push_back(MakeBox(400, -6.0f, -48.0f, 0.0f, 2.5f, 1.0f, 2.0f));
-    obstacles.push_back(MakeBox(401, 6.5f, -44.5f, 0.1f, 3.5f, 1.0f, 2.0f));
 
-    // Região: Z = -38 a -30
-    obstacles.push_back(MakeBox(402, -5.0f, -38.0f, 0.2f, 3.5f, 1.0f, 2.2f));
-    obstacles.push_back(MakeBox(403, 4.5f, -35.0f, -0.1f, 2.5f, 1.0f, 2.0f));
-    obstacles.push_back(MakeBox(404, 0.0f, -32.0f, 0.0f, 4.0f, 1.0f, 2.0f));
+    // Z = -48 a -42
+    obstacles.push_back(MakeBox(400, -6.0f, -48.0f, 0.0f, 2.5f, 1.0f, 4.0f));
+    obstacles.push_back(MakeBox(401, 6.5f, -44.5f, 0.1f, 3.5f, 1.0f, 4.0f));
 
-    // Região: Z = -25 a -15
-    obstacles.push_back(MakeBox(405, -6.5f, -25.0f, 0.1f, 3.0f, 1.0f, 2.5f));
-    obstacles.push_back(MakeBox(406, 6.5f, -22.0f, -0.1f, 3.5f, 1.0f, 2.2f));
-    obstacles.push_back(MakeBox(407, -2.5f, -18.0f, 0.0f, 4.0f, 1.0f, 2.0f));
+    // Z = -38 a -30
+    obstacles.push_back(MakeBox(402, -5.0f, -38.0f, 0.2f, 3.5f, 1.0f, 4.4f));
+    obstacles.push_back(MakeBox(403, 4.5f, -35.0f, -0.1f, 2.5f, 1.0f, 4.0f));
+    obstacles.push_back(MakeBox(404, 0.0f, -32.0f, 0.0f, 4.0f, 1.0f, 4.0f));
 
-    // Região: Z = -8 a 2
-    obstacles.push_back(MakeBox(408, 0.0f, -8.0f, 0.1f, 4.5f, 1.0f, 2.0f));
-    obstacles.push_back(MakeBox(409, -7.5f, -2.0f, 0.0f, 2.0f, 1.0f, 2.0f));
+    // Z = -25 a -15
+    obstacles.push_back(MakeBox(405, -6.5f, -25.0f, 0.1f, 3.0f, 1.0f, 5.0f));
+    obstacles.push_back(MakeBox(406, 6.5f, -22.0f, -0.1f, 3.5f, 1.0f, 4.4f));
+    obstacles.push_back(MakeBox(407, -2.5f, -18.0f, 0.0f, 4.0f, 1.0f, 4.0f));
 
-    // Região: Z = 6 a 18
-    obstacles.push_back(MakeBox(410, 6.5f, 6.0f, 0.0f, 3.5f, 1.0f, 2.3f));
-    obstacles.push_back(MakeBox(411, -4.5f, 11.0f, -0.2f, 2.5f, 1.0f, 2.0f));
-    obstacles.push_back(MakeBox(412, 2.0f, 17.0f, 0.1f, 5.0f, 1.0f, 2.5f));
+    // Z = -8 a 2
+    obstacles.push_back(MakeBox(408, 0.0f, -8.0f, 0.1f, 4.5f, 1.0f, 4.0f));
+    obstacles.push_back(MakeBox(409, -7.5f, -2.0f, 0.0f, 2.0f, 1.0f, 4.0f));
 
-    // Região: Z = 24 a 38
-    obstacles.push_back(MakeBox(413, -7.0f, 24.0f, 0.0f, 2.8f, 1.0f, 2.0f));
-    obstacles.push_back(MakeBox(414, 6.0f, 29.0f, 0.2f, 3.5f, 1.0f, 2.2f));
-    obstacles.push_back(MakeBox(415, 0.0f, 35.5f, 0.0f, 4.0f, 1.0f, 2.0f));
+    // Z = 6 a 18
+    obstacles.push_back(MakeBox(410, 6.5f, 6.0f, 0.0f, 3.5f, 1.0f, 4.6f));
+    obstacles.push_back(MakeBox(411, -4.5f, 11.0f, -0.2f, 2.5f, 1.0f, 4.0f));
+    obstacles.push_back(MakeBox(412, 2.0f, 17.0f, 0.1f, 5.0f, 1.0f, 5.0f));
 
-    // Região: Z = 42 a 58
-    obstacles.push_back(MakeBox(416, -6.5f, 42.0f, -0.1f, 3.5f, 1.0f, 2.2f));
-    obstacles.push_back(MakeBox(417, 5.0f, 46.0f, 0.0f, 2.5f, 1.0f, 2.0f));
-    obstacles.push_back(MakeBox(418, 0.0f, 52.0f, 0.1f, 4.0f, 1.0f, 2.3f));
-    obstacles.push_back(MakeBox(419, -3.5f, 58.0f, -0.2f, 3.0f, 1.0f, 2.0f));
+    // Z = 24 a 38
+    obstacles.push_back(MakeBox(413, -7.0f, 24.0f, 0.0f, 2.8f, 1.0f, 4.0f));
+    obstacles.push_back(MakeBox(414, 6.0f, 29.0f, 0.2f, 3.5f, 1.0f, 4.4f));
+    obstacles.push_back(MakeBox(415, 0.0f, 35.5f, 0.0f, 4.0f, 1.0f, 4.0f));
 
+    // Z = 42 a 58
+    obstacles.push_back(MakeBox(416, -6.5f, 42.0f, -0.1f, 3.5f, 1.0f, 4.4f));
+    obstacles.push_back(MakeBox(417, 5.0f, 46.0f, 0.0f, 2.5f, 1.0f, 4.0f));
+    obstacles.push_back(MakeBox(418, 0.0f, 52.0f, 0.1f, 4.0f, 1.0f, 4.6f));
+    obstacles.push_back(MakeBox(419, -3.5f, 58.0f, -0.2f, 3.0f, 1.0f, 4.0f));
 
     obstacles.push_back(MakeSphere(6, 0.0f, -30.0f, 1.5f)); // id, x, z, raio
 
@@ -922,7 +907,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
                 if (obj.type == 1)
                 {
                     PushMatrix(model);
-                        model = model * Matrix_Translate(obj.x, obj.height-0.5f, obj.z);
+                        model = model * Matrix_Translate(obj.x, (obj.height/2) -0.5f, obj.z);
                         model = model * Matrix_Scale(obj.width, obj.height, obj.length);
                         model = model * Matrix_Rotate_Y(obj.angleY); // caso tenha rotação
                         glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
@@ -974,7 +959,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
         DrawCube(render_as_black_uniform);
 
         PushMatrix(model);
-            model = model * Matrix_Translate(0.0f, MAP_Height - 0.5f, 0.0f); // eleva o Mapa (Cubo)
+            model = model * Matrix_Translate(0.0f, MAP_Height/2 - 0.5f, 0.0f); // eleva o Mapa (Cubo)
             model = model * Matrix_Scale(MAP_Width, MAP_Height, MAP_Depth);   // largura, altura, profundidade
             glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
             glUniform1i(object_id_uniform, 0);
@@ -1000,7 +985,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
         glUniform1i(tex_image_uniform, 0);
 
         // Translação inicial do torso
-        model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY + 1.0f, g_TorsoPositionZ + 0.0f);
+        model = model * Matrix_Translate(g_TorsoPositionX, g_TorsoPositionY + 0.5f, g_TorsoPositionZ + 0.0f);
         model = model * Matrix_Rotate_Y(g_CarAngleY);
         // Guardamos matriz model atual na pilha
         PushMatrix(model);
@@ -1027,7 +1012,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
         PopMatrix(model);
 
             PushMatrix(model); // model = base do torso (após translação inicial)
-            model = model * Matrix_Translate(0.0f, +0.1f, 1.0f); // Sobe até o topo do torso
+            model = model * Matrix_Translate(0.0f, +0.6f, 1.0f); // Sobe até o topo do torso
             model = model
                   * Matrix_Rotate_Z(g_AngleZ)
                   * Matrix_Rotate_Y(g_AngleY)
@@ -1042,7 +1027,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
         PopMatrix(model);
 
         PushMatrix(model);
-        model = model * Matrix_Translate(-0.7f, -1.05f, 1.0f); // Posição da roda frontal direita
+        model = model * Matrix_Translate(-0.7f, -0.50, 1.0f); // Posição da roda frontal direita
         PushMatrix(model);
             model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
             model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
@@ -1056,7 +1041,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
         PopMatrix(model);
 
     PushMatrix(model); // model = base do torso
-        model = model * Matrix_Translate(-0.7f, -1.05f, -1.0f); // Roda Traseira Direita
+        model = model * Matrix_Translate(-0.7f, -0.50f, -1.0f); // Roda Traseira Direita
         PushMatrix(model);
             model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
             model = model * Matrix_Scale(0.4f, 0.2f, 0.4f); // raio XZ e altura Y
@@ -1071,7 +1056,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
 
 
             PushMatrix(model); // model = base do torso
-            model = model * Matrix_Translate(+0.7f, -1.05f, 1.0f); // Roda frontal esquerda
+            model = model * Matrix_Translate(+0.7f, -0.50f, 1.0f); // Roda frontal esquerda
 
             PushMatrix(model);
                 model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
@@ -1086,7 +1071,7 @@ float block_time = 0.0f; // pos do bloco na curva de bezier
             PopMatrix(model);
 
             PushMatrix(model); // model = base do torso
-            model = model * Matrix_Translate(+0.7f, -1.05f, -1.0f); // Roda traseira esquerda
+            model = model * Matrix_Translate(+0.7f, -0.50f, -1.0f); // Roda traseira esquerda
 
             PushMatrix(model);
                 model = model * Matrix_Rotate_Z(glm::half_pi<float>()); // Deita o cilindro no eixo z
@@ -1919,29 +1904,16 @@ GLuint BuildTriangles()
     // Este vetor "model_coefficients" define a GEOMETRIA (veja slides 103-110 do documento Aula_04_Modelagem_Geometrica_3D.pdf).
     //
     GLfloat model_coefficients[] = {
-    // Vértices de um cubo
-    //    X      Y     Z     W
-        -0.5f,  0.0f,  0.5f, 1.0f, // posição do vértice 0
-        -0.5f, -1.0f,  0.5f, 1.0f, // posição do vértice 1
-         0.5f, -1.0f,  0.5f, 1.0f, // posição do vértice 2
-         0.5f,  0.0f,  0.5f, 1.0f, // posição do vértice 3
-        -0.5f,  0.0f, -0.5f, 1.0f, // posição do vértice 4
-        -0.5f, -1.0f, -0.5f, 1.0f, // posição do vértice 5
-         0.5f, -1.0f, -0.5f, 1.0f, // posição do vértice 6
-         0.5f,  0.0f, -0.5f, 1.0f, // posição do vértice 7
-    // Vértices para desenhar o eixo X
-    //    X      Y     Z     W
-         0.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 8
-         1.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 9
-    // Vértices para desenhar o eixo Y
-    //    X      Y     Z     W
-         0.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 10
-         0.0f,  1.0f,  0.0f, 1.0f, // posição do vértice 11
-    // Vértices para desenhar o eixo Z
-    //    X      Y     Z     W
-         0.0f,  0.0f,  0.0f, 1.0f, // posição do vértice 12
-         0.0f,  0.0f,  1.0f, 1.0f, // posição do vértice 13
-    };
+    //         X     Y      Z     W
+        -0.5f, +0.5f,  0.5f, 1.0f, // 0 topo frente esquerdo
+        -0.5f, -0.5f,  0.5f, 1.0f, // 1 base frente esquerdo
+         0.5f, -0.5f,  0.5f, 1.0f, // 2 base frente direito
+         0.5f, +0.5f,  0.5f, 1.0f, // 3 topo frente direito
+        -0.5f, +0.5f, -0.5f, 1.0f, // 4 topo trás esquerdo
+        -0.5f, -0.5f, -0.5f, 1.0f, // 5 base trás esquerdo
+         0.5f, -0.5f, -0.5f, 1.0f, // 6 base trás direito
+         0.5f, +0.5f, -0.5f, 1.0f, // 7 topo trás direito
+};
 
     // Criamos o identificador (ID) de um Vertex Buffer Object (VBO).  Um VBO é
     // um buffer de memória que irá conter os valores de um certo atributo de
