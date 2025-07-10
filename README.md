@@ -49,11 +49,11 @@ Utilizamos vários conceitos trabalhados em aula, como
 
 ## Imagens da Aplicação
 
-### Screenshot 1
+### Protagonista
 
 ![Protagonista](imagens/protagonista.png)
 
-### Screenshot 2
+### Tela Inicial
 
 ![Tela Inicial](imagens/inicial.png)
 
