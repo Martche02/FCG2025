@@ -51,11 +51,11 @@ Utilizamos vários conceitos trabalhados em aula, como
 
 ### Screenshot 1
 
-![Screenshot 1](imagens/screenshot1.png)
+![Screenshot 1](imagens/protagonista.png)
 
 ### Screenshot 2
 
-![Screenshot 2](imagens/screenshot2.png)
+![Screenshot 2](imagens/inicial.png)
 
 ---
 
